@@ -41,7 +41,37 @@ git push origin main
 gh release create vX.Y.Z --title "vX.Y.Z — <headline>" --notes "..."
 ```
 
-A GitHub Actions release workflow should mirror type-deck's: on `release: published`, run `npm ci && npm run build`, stage a tiny `package.json` inside `com.ewels.deckcal.sdPlugin/` so `googleapis` and `google-auth-library` are installed alongside `bin/plugin.js`, then `streamdeck pack` and upload. Not wired up yet — see TODO.
+Packaging runs on GitHub Actions (`.github/workflows/release.yml`) on `release: published`. The workflow runs `npm ci`, then `npm run build` with `DECKCAL_GOOGLE_CLIENT_ID` / `DECKCAL_GOOGLE_CLIENT_SECRET` from repo secrets, stages a tiny `package.json` inside `com.ewels.deckcal.sdPlugin/` so `googleapis` + `google-auth-library` (and their transitive `gaxios` + `gtoken`) are installed alongside `bin/plugin.js`, runs `streamdeck pack`, and `gh release upload`s the resulting `com.ewels.deckcal.streamDeckPlugin` to the release.
+
+### Local pack smoke check
+
+To verify the packed output before tagging a release — same steps the workflow does, minus the upload:
+
+```sh
+npm run build                          # produces com.ewels.deckcal.sdPlugin/bin/plugin.js
+
+cat > com.ewels.deckcal.sdPlugin/package.json <<'EOF'
+{
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "googleapis": "^146.0.0",
+    "google-auth-library": "^9.15.0"
+  }
+}
+EOF
+(cd com.ewels.deckcal.sdPlugin && npm install --omit=dev --no-package-lock --no-fund --no-audit)
+
+npx streamdeck pack com.ewels.deckcal.sdPlugin --force
+unzip -l com.ewels.deckcal.streamDeckPlugin | head -30
+```
+
+Clean up before going back to `npm run watch` — the staged `package.json` + installed `node_modules/` inside the sdPlugin dir confuse the dev loop:
+
+```sh
+rm -rf com.ewels.deckcal.sdPlugin/node_modules com.ewels.deckcal.sdPlugin/package.json com.ewels.deckcal.streamDeckPlugin
+npm run build   # rollup re-emits the {"type":"module"} package.json
+```
 
 ## Architecture
 
@@ -143,8 +173,3 @@ Refresh is handled transparently by `OAuth2Client`. The `tokens` event handler p
 ## Conventions
 
 **No em-dashes in user-facing text.** README copy, UI HTML labels and tooltips, anything visible to a Stream Deck user: use a period, colon, or parentheses instead of `—`. This rule does **not** apply to internal docs like this file or `MEMORY.md`.
-
-## TODOs
-
-- Wire up GitHub Actions release workflow (clone `type-deck/.github/workflows/release.yml` with the `googleapis`+`google-auth-library`+`gaxios`+`gtoken` set instead of `@nut-tree-fork/libnut`).
-- Document the `streamdeck pack` smoke check.

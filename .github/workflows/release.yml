@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+# Defaults to read-only at the workflow level; the packaging job opts into
+# `contents: write` only where it's actually needed (release-asset upload).
+permissions:
+  contents: read
+
+# Two releases published in quick succession would otherwise race on the
+# upload step. Serialize by release tag, no in-flight cancellation.
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: Pack and attach .streamDeckPlugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # `gh release upload` writes the packed plugin asset to the release.
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24"
+
+      - run: npm ci
+
+      - name: Build
+        # rollup substitutes the OAuth values into bin/plugin.js at build time.
+        # Set these as repo secrets in GitHub → Settings → Secrets and variables.
+        env:
+          DECKCAL_GOOGLE_CLIENT_ID: ${{ secrets.DECKCAL_GOOGLE_CLIENT_ID }}
+          DECKCAL_GOOGLE_CLIENT_SECRET: ${{ secrets.DECKCAL_GOOGLE_CLIENT_SECRET }}
+        run: npm run build
+
+      - name: Stage runtime deps inside the plugin folder
+        # rollup keeps googleapis + google-auth-library (and their transitive
+        # gaxios + gtoken) external. Write a package.json listing them so npm
+        # pulls the deps alongside bin/plugin.js for `streamdeck pack`. The
+        # rollup build also emits a package.json here (`{"type":"module"}`),
+        # which this step overwrites with the full dep set.
+        run: |
+          set -euo pipefail
+          cat > com.ewels.deckcal.sdPlugin/package.json <<'EOF'
+          {
+            "type": "module",
+            "private": true,
+            "dependencies": {
+              "googleapis": "^146.0.0",
+              "google-auth-library": "^9.15.0"
+            }
+          }
+          EOF
+          cd com.ewels.deckcal.sdPlugin
+          npm install --omit=dev --no-package-lock --no-fund --no-audit
+
+      - name: Pack
+        run: npx --no-install streamdeck pack com.ewels.deckcal.sdPlugin --force
+
+      - name: Attach .streamDeckPlugin to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" com.ewels.deckcal.streamDeckPlugin --clobber
