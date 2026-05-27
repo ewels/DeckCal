@@ -1,0 +1,112 @@
+# DeckCal
+
+A Stream Deck plugin that turns a key into a live indicator for your Google
+Calendar. The key shows a countdown to the next meeting (or remaining time in
+the current one), with a progress bar across the top, a yellow fill in the
+last few minutes before it starts, and a footer band for out-of-office or
+focus-time overlaps. Press the key to join the current meeting, open the
+meeting URL in a chosen app, or open the next meeting's notes doc.
+
+> Status: pre-release. Core runtime, OAuth, and rendering are in. Icons in
+> `imgs/` are placeholders.
+
+## What you get on the key
+
+- Countdown to the next meeting (`54m`, `12m`, `42s`, `Tomorrow 08:00`) or
+  remaining time in an ongoing meeting (`1:23`, `8m`).
+- Thin blue (upcoming) / green (ongoing) progress bar along the top edge.
+- Full-icon yellow fill in the last 5 minutes before a meeting starts.
+- Optional flash on meeting start until you press the key — text reads `NOW`.
+- Footer band for out-of-office (grey) or focus-time (purple) overlaps.
+- Truncated event title at the bottom of the icon; `+N` floats above it for
+  overlapping events.
+
+Short press joins the current meeting (Google Meet, Zoom, or Teams),
+configurable per-provider to either open the URL or hand it off to a desktop
+app. Long press opens the meeting's first attached doc, falling back to the
+event detail page.
+
+## Install (end users)
+
+Download the latest `com.ewels.deckcal.streamDeckPlugin` from the
+[releases page](https://github.com/ewels/deckcal/releases), double-click to
+install in Stream Deck, drag **Meeting countdown** onto a key, click the
+gear icon, and **Sign in with Google**.
+
+No Google Cloud setup required. The OAuth client is bundled into the release
+binary. The plugin authenticates against Google with a loopback PKCE flow
+(RFC 8252) — credentials never leave your machine.
+
+> While the OAuth app is in Google's **Testing** status, sign-in is
+> restricted to test users on the app's allowlist. Open an issue if you
+> want to be added. Long term, the app will go through Google verification
+> so anyone can sign in.
+
+## Building from source (developers)
+
+```sh
+npm install
+cp .env.local.example .env.local       # then paste your own OAuth values
+npm run build                          # rollup substitutes env values at build time
+```
+
+You need your own Google OAuth Desktop client to build a working binary.
+One-time setup (~5 min):
+
+1. Go to <https://console.cloud.google.com/> and create or pick a project.
+2. Enable the **Google Calendar API** under **APIs & Services → Library**.
+3. Open **Google Auth Platform → Branding**. Configure as an _External_
+   app, app name `DeckCal`, user support + developer contact email = yours.
+4. Open **Google Auth Platform → Audience**. Add yourself as a **Test
+   user**. Publishing status stays **Testing**.
+5. Open **Google Auth Platform → Clients → Create client**. Type:
+   **Desktop app**. After **Create**, copy both the **Client ID** and the
+   **Client secret**.
+6. Paste them into `.env.local` as `DECKCAL_GOOGLE_CLIENT_ID` and
+   `DECKCAL_GOOGLE_CLIENT_SECRET`.
+
+`.env.local` is gitignored. The repo never contains real credentials.
+Release CI passes them as environment variables to the build step.
+
+A Desktop OAuth `client_secret` bundled in a binary is not a real secret —
+RFC 8252 explicitly treats it as a public client. The actual security comes
+from PKCE, regenerated per sign-in. Google still requires the value to be
+sent in the token exchange request body.
+
+## Build
+
+```sh
+npm install
+npm run build         # one-off rollup build → com.ewels.deckcal.sdPlugin/bin/plugin.js
+npm run watch         # rebuild on save, restart the plugin in Stream Deck
+npm run check         # biome lint + format
+```
+
+A code change does not appear in Stream Deck until the plugin process is
+restarted (`npm run watch` does this automatically; otherwise run
+`streamdeck restart com.ewels.deckcal`).
+
+## Property inspector
+
+In the Stream Deck app, drag the "Meeting countdown" action onto a key, then
+click the gear icon to open settings:
+
+- **Accounts** — Sign in with one or more Google accounts. Add additional
+  ones with **Add another account**.
+- **Calendars** — Tick which calendars feed the countdown, grouped per
+  account. Primary is auto-selected on first sign-in.
+- **Behavior** — Long-press threshold, imminent-fill window, and what happens
+  when a meeting starts (flash until pressed, or silent transition).
+- **Next meeting press** — URL or app to launch when there is no ongoing
+  meeting. Defaults to <https://calendar.google.com>.
+- **Join meeting press** — For Google Meet / Zoom / Teams individually,
+  choose URL or app. On macOS the app field is passed to `open -a`; on
+  Windows it goes to `start ""`.
+- **Filters** — Include all-day / tentative / declined events; horizon
+  beyond which to drop or dim distant future events.
+- **Special events** — How to handle out-of-office and focus-time events:
+  footer band only (default), ignore completely, or treat as a normal event.
+
+## License
+
+MIT.

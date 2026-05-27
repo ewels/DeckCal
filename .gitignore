@@ -1,0 +1,15 @@
+# Node.js
+node_modules/
+
+# Stream Deck files
+*.sdPlugin/bin
+*.sdPlugin/logs
+*.streamDeckPlugin
+/logs/
+
+# macOS
+.DS_Store
+
+# Local secrets — see README for the keys we expect.
+.env.local
+.env.*.local
