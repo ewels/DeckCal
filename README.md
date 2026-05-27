@@ -13,6 +13,24 @@ footer band for out-of-office or focus-time overlaps. Press the key to join
 the current meeting, open the meeting URL in a chosen app, or open the next
 meeting's notes doc.
 
+## Features
+
+|                                                                   |                                                                                                      |
+| :---------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------- |
+|     <img src="docs/examples/no_event.png" alt="" width="120">     | **Idle.**<br>Nothing on the calendar today any time soon.                                            |
+|    <img src="docs/examples/future_23m.png" alt="" width="120">    | **Countdown to the next meeting.**<br>Time remaining, with a blue bar.                               |
+|    <img src="docs/examples/future_3m.png" alt="" width="120">     | **Imminent.**<br>In the last 5 minutes a yellow block gradually fills the key.                       |
+|   <img src="docs/examples/meeting_now.gif" alt="" width="120">    | **Meeting starts.**<br>Flashes `NOW` until you press. Pressing opens the meeting.                    |
+| <img src="docs/examples/ongoing_14m_left.png" alt="" width="120"> | **In the meeting.**<br>Time remaining, green bar shows time elapsed.                                 |
+| <img src="docs/examples/tomorrow_dimmed.png" alt="" width="120">  | **Beyond today.**<br>Distant events are dimmed, events tomorrow get time of day instead of countdown |
+|    <img src="docs/examples/focus_time.png" alt="" width="120">    | **Focus time.**<br>Purple footer band, so you can still see the next regular meeting.                |
+|  <img src="docs/examples/out_of_office.png" alt="" width="120">   | **Out of office.**<br>Grey footer band so you can see the next meeting.                              |
+
+Short press joins the current meeting (Google Meet, Zoom, or Teams),
+configurable per-provider to either open the URL or hand it off to a desktop
+app. Long press opens the meeting's first attached doc, falling back to the
+event detail page.
+
 ## Actions
 
 |                                                                                         | Action                | What it shows                                                                                          |
@@ -20,22 +38,6 @@ meeting's notes doc.
 | <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | The ongoing meeting if you're in one, otherwise the next upcoming meeting. The "do everything" action. |
 | <img src="com.ewels.deckcal.sdPlugin/imgs/actions/upcoming/key.svg" alt="" width="56">  | **Upcoming meeting**  | Only the next upcoming meeting. Ignores meetings already in progress.                                  |
 |  <img src="com.ewels.deckcal.sdPlugin/imgs/actions/ongoing/key.svg" alt="" width="56">  | **Ongoing meeting**   | Only the meeting you're currently in. Idle when nothing is happening.                                  |
-
-## What you get on the key
-
-- Countdown to the next meeting (`54m`, `12m`, `42s`, `Tomorrow 08:00`) or
-  remaining time in an ongoing meeting (`1:23`, `8m`).
-- Thin blue (upcoming) / green (ongoing) progress bar along the top edge.
-- Full-icon yellow fill in the last 5 minutes before a meeting starts.
-- Optional flash on meeting start until you press the key — text reads `NOW`.
-- Footer band for out-of-office (grey) or focus-time (purple) overlaps.
-- Truncated event title at the bottom of the icon; `+N` floats above it for
-  overlapping events.
-
-Short press joins the current meeting (Google Meet, Zoom, or Teams),
-configurable per-provider to either open the URL or hand it off to a desktop
-app. Long press opens the meeting's first attached doc, falling back to the
-event detail page.
 
 ## Install (end users)
 
