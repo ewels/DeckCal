@@ -1,14 +1,25 @@
-# DeckCal
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.svg">
+    <img src="docs/logo-light.svg" alt="DeckCal" width="320">
+  </picture>
+</p>
 
-A Stream Deck plugin that turns a key into a live indicator for your Google
-Calendar. The key shows a countdown to the next meeting (or remaining time in
-the current one), with a progress bar across the top, a yellow fill in the
-last few minutes before it starts, and a footer band for out-of-office or
-focus-time overlaps. Press the key to join the current meeting, open the
-meeting URL in a chosen app, or open the next meeting's notes doc.
+A [Stream Deck](https://www.elgato.com/stream-deck) plugin that turns a key
+into a live indicator for your Google Calendar. The key shows a countdown to
+the next meeting (or remaining time in the current one), with a progress bar
+across the top, a yellow fill in the last few minutes before it starts, and a
+footer band for out-of-office or focus-time overlaps. Press the key to join
+the current meeting, open the meeting URL in a chosen app, or open the next
+meeting's notes doc.
 
-> Status: pre-release. Core runtime, OAuth, and rendering are in. Icons in
-> `imgs/` are placeholders.
+## Actions
+
+| Action                                                                                                  | What it shows                                                                                            |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="48">**Meeting countdown** | The ongoing meeting if you're in one, otherwise the next upcoming meeting. The "do everything" action.  |
+| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/upcoming/key.svg" alt="" width="48">**Upcoming meeting**  | Only the next upcoming meeting. Ignores meetings already in progress.                                    |
+| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/ongoing/key.svg" alt="" width="48">**Ongoing meeting**    | Only the meeting you're currently in. Idle when nothing is happening.                                    |
 
 ## What you get on the key
 

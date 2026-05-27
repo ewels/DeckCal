@@ -69,7 +69,7 @@ com.ewels.deckcal.sdPlugin/
   ui/countdown.html     property inspector (sdpi-components v4 over CDN)
   ui/countdown.js       PI bridge: sign-in, calendar checkbox list, conditional show/hide
   bin/plugin.js         rollup output, gitignored
-  imgs/                 icons (placeholders; replace before release)
+  imgs/                 action + plugin icons (svg sources + rsvg-rendered pngs)
 rollup.config.mjs       bundles src/ to bin/plugin.js
                         googleapis + google-auth-library + gaxios + gtoken are external
                         — resolved from node_modules at runtime
@@ -146,6 +146,5 @@ Refresh is handled transparently by `OAuth2Client`. The `tokens` event handler p
 
 ## TODOs
 
-- Replace placeholder icons in `imgs/` with real artwork before publishing.
 - Wire up GitHub Actions release workflow (clone `type-deck/.github/workflows/release.yml` with the `googleapis`+`google-auth-library`+`gaxios`+`gtoken` set instead of `@nut-tree-fork/libnut`).
-- Document the `streamdeck pack` smoke check once icons exist.
+- Document the `streamdeck pack` smoke check.
