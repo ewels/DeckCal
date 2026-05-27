@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>DeckCal Settings</title>
+    <meta charset="utf-8" />
+    <script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+      }
+      .help {
+        display: block;
+        margin: 2px 0 8px;
+        color: var(--color-content-secondary, #999);
+        font-size: 11px;
+        line-height: 1.4;
+      }
+      .section {
+        margin-top: 14px;
+        padding-top: 6px;
+        border-top: 1px solid var(--color-border, #444);
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--color-content-secondary, #999);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 4px 0;
+      }
+      .row .label {
+        flex: 0 0 110px;
+        font-size: 12px;
+        color: var(--color-content-secondary, #ccc);
+      }
+      .row select,
+      .row input[type="text"] {
+        flex: 1;
+        background: #1d1d1d;
+        color: #eee;
+        border: 1px solid #333;
+        border-radius: 4px;
+        padding: 4px 6px;
+        font: inherit;
+      }
+      .btn {
+        background: #2a2a2a;
+        color: #eee;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font: inherit;
+      }
+      .btn-primary {
+        background: #1a73e8;
+        border-color: #1a73e8;
+      }
+      .btn:hover {
+        background: #333;
+      }
+      .btn-primary:hover {
+        background: #2b80ea;
+      }
+      .acct {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 4px 0;
+        font-size: 12px;
+      }
+      .acct .email {
+        flex: 1;
+        color: #eee;
+      }
+      #accountList {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 4px 0;
+      }
+      #accountList .acct-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #eee;
+      }
+      #accountList .acct-row .email {
+        flex: 1;
+      }
+      #calendarList {
+        max-height: 200px;
+        overflow-y: auto;
+        margin: 4px 0 8px;
+        padding: 4px;
+        background: #151515;
+        border: 1px solid #333;
+        border-radius: 4px;
+      }
+      #calendarList .acct-header {
+        margin: 4px 4px 2px;
+        padding-top: 4px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #999;
+        border-top: 1px solid #2a2a2a;
+      }
+      #calendarList .acct-header:first-child {
+        margin-top: 0;
+        border-top: none;
+        padding-top: 0;
+      }
+      #calendarList .cal {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 2px 0;
+        font-size: 12px;
+        color: #eee;
+        cursor: pointer;
+      }
+      #calendarList .cal span {
+        color: inherit;
+      }
+      .error {
+        color: #ff7373;
+        font-size: 11px;
+        margin: 4px 0;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="section">Accounts</div>
+    <div id="accountList"></div>
+    <div class="acct">
+      <button type="button" class="btn btn-primary" id="signInBtn">
+        Sign in with Google
+      </button>
+    </div>
+    <div id="authError" class="error hidden"></div>
+
+    <div id="loggedInOnly" class="hidden">
+      <div class="section">Calendars</div>
+      <div id="calendarList">
+        <small class="help">Sign in to load your calendars.</small>
+      </div>
+
+    <div class="section">Behavior</div>
+    <sdpi-item label="Long press (ms)">
+      <sdpi-textfield
+        setting="longPressThresholdMs"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        placeholder="600"
+      ></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item label="Imminent fill (min)">
+      <sdpi-textfield
+        setting="imminentFillMinutes"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        placeholder="5"
+      ></sdpi-textfield>
+    </sdpi-item>
+    <small class="help">
+      In the final N minutes before the meeting starts (or ends), the icon
+      progressively fills with yellow (countdown to start) or green (countdown
+      to end).
+    </small>
+    <sdpi-item label="When meeting starts">
+      <sdpi-select setting="meetingStartBehavior" default="flash">
+        <option value="flash">Flash yellow until I press the key</option>
+        <option value="none">Do nothing (go straight to in-progress)</option>
+      </sdpi-select>
+    </sdpi-item>
+
+    <div class="section">Next meeting press</div>
+    <small class="help">
+      What pressing the key does when no meeting is currently ongoing.
+    </small>
+    <sdpi-item label="Action">
+      <sdpi-select setting="nextMeetingActionType" default="url">
+        <option value="url">Open URL</option>
+        <option value="app">Open app</option>
+      </sdpi-select>
+    </sdpi-item>
+    <sdpi-item label="URL" data-show-when="nextMeetingActionType=url">
+      <sdpi-textfield
+        setting="nextMeetingUrl"
+        placeholder="https://calendar.google.com"
+      ></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item label="App" data-show-when="nextMeetingActionType=app">
+      <sdpi-textfield
+        setting="nextMeetingApp"
+        placeholder="Google Calendar"
+      ></sdpi-textfield>
+    </sdpi-item>
+
+    <div class="section">Join meeting press</div>
+    <small class="help">
+      For ongoing meetings, choose whether to open the meeting URL in your
+      browser or hand it off to a desktop app. On macOS the app field accepts
+      a name or full path (passed to <code>open -a</code>); on Windows, the
+      full executable path or registered app name.
+    </small>
+
+    <sdpi-item label="Google Meet">
+      <sdpi-select setting="providerMeetType" default="url">
+        <option value="url">Open URL</option>
+        <option value="app">Open app</option>
+      </sdpi-select>
+    </sdpi-item>
+    <sdpi-item label="Meet app" data-show-when="providerMeetType=app">
+      <sdpi-textfield
+        setting="providerMeetApp"
+        placeholder="Google Chrome"
+      ></sdpi-textfield>
+    </sdpi-item>
+
+    <sdpi-item label="Zoom">
+      <sdpi-select setting="providerZoomType" default="url">
+        <option value="url">Open URL</option>
+        <option value="app">Open app</option>
+      </sdpi-select>
+    </sdpi-item>
+    <sdpi-item label="Zoom app" data-show-when="providerZoomType=app">
+      <sdpi-textfield
+        setting="providerZoomApp"
+        placeholder="zoom.us"
+      ></sdpi-textfield>
+    </sdpi-item>
+
+    <sdpi-item label="Microsoft Teams">
+      <sdpi-select setting="providerTeamsType" default="url">
+        <option value="url">Open URL</option>
+        <option value="app">Open app</option>
+      </sdpi-select>
+    </sdpi-item>
+    <sdpi-item label="Teams app" data-show-when="providerTeamsType=app">
+      <sdpi-textfield
+        setting="providerTeamsApp"
+        placeholder="Microsoft Teams"
+      ></sdpi-textfield>
+    </sdpi-item>
+
+    <div class="section">Filters</div>
+    <sdpi-item label="All-day">
+      <sdpi-checkbox
+        setting="includeAllDay"
+        label="Include all-day events"
+      ></sdpi-checkbox>
+    </sdpi-item>
+    <sdpi-item label="Tentative">
+      <sdpi-checkbox
+        setting="includeTentative"
+        label="Include tentative events"
+        default="true"
+      ></sdpi-checkbox>
+    </sdpi-item>
+    <sdpi-item label="Declined">
+      <sdpi-checkbox
+        setting="includeDeclined"
+        label="Include declined events"
+      ></sdpi-checkbox>
+    </sdpi-item>
+    <sdpi-item label="Ignore after (h)">
+      <sdpi-textfield
+        setting="ignoreAfterHours"
+        inputmode="decimal"
+        placeholder="Always show"
+        default="4"
+      ></sdpi-textfield>
+    </sdpi-item>
+    <small class="help">
+      Drop events starting more than this many hours from now. Empty = always
+      show.
+    </small>
+    <sdpi-item label="Dim after (h)">
+      <sdpi-textfield
+        setting="dimAfterHours"
+        inputmode="decimal"
+        placeholder="Always full"
+        default="2"
+      ></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item label="Dim opacity (%)">
+      <sdpi-textfield
+        setting="dimOpacity"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        placeholder="30"
+        default="30"
+      ></sdpi-textfield>
+    </sdpi-item>
+    <small class="help">
+      Render the icon text at this opacity when the event is more than the
+      hours above away. Clear the hours field to disable dimming entirely.
+    </small>
+
+    <div class="section">Special events</div>
+    <sdpi-item label="Out of office">
+      <sdpi-select setting="outOfOfficeMode" default="footerBand">
+        <option value="footerBand">Show only as footer band (grey)</option>
+        <option value="ignore">Ignore completely</option>
+        <option value="regular">Treat as regular event</option>
+      </sdpi-select>
+    </sdpi-item>
+    <sdpi-item label="Focus time">
+      <sdpi-select setting="focusMode" default="footerBand">
+        <option value="footerBand">Show only as footer band (purple)</option>
+        <option value="ignore">Ignore completely</option>
+        <option value="regular">Treat as regular event</option>
+      </sdpi-select>
+    </sdpi-item>
+    </div>
+
+    <script src="countdown.js"></script>
+  </body>
+</html>

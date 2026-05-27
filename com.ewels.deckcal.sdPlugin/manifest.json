@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "Name": "DeckCal",
+  "Version": "0.1.0.0",
+  "Author": "Phil Ewels",
+  "URL": "https://github.com/ewels/deckcal",
+  "SupportURL": "https://github.com/ewels/deckcal/issues",
+  "Actions": [
+    {
+      "Name": "Meeting countdown",
+      "UUID": "com.ewels.deckcal.countdown",
+      "Icon": "imgs/actions/countdown/icon",
+      "Tooltip": "Live countdown to your next Google Calendar meeting.",
+      "PropertyInspectorPath": "ui/countdown.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "imgs/actions/countdown/key",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ]
+    }
+  ],
+  "Category": "DeckCal",
+  "CategoryIcon": "imgs/plugin/category-icon",
+  "CodePath": "bin/plugin.js",
+  "Description": "Live countdown to your next Google Calendar meeting.",
+  "Icon": "imgs/plugin/marketplace",
+  "SDKVersion": 3,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "12"
+    },
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Nodejs": {
+    "Version": "24",
+    "Debug": "enabled"
+  },
+  "UUID": "com.ewels.deckcal"
+}

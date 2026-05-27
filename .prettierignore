@@ -1,0 +1,12 @@
+node_modules
+package-lock.json
+com.ewels.deckcal.sdPlugin/bin
+com.ewels.deckcal.sdPlugin/logs
+
+# Biome handles JS/TS
+*.ts
+*.tsx
+*.js
+*.jsx
+*.mjs
+*.cjs
