@@ -24,7 +24,31 @@
       authError: document.getElementById("authError"),
       calendarList: document.getElementById("calendarList"),
       loggedInOnly: document.getElementById("loggedInOnly"),
+      variantBanner: document.getElementById("variantBanner"),
     };
+
+    const VARIANT_BANNERS = {
+      combined:
+        "Shows your current meeting if you're in one, otherwise the next one. (Sign in once, you can use the same accounts in any other DeckCal action.)",
+      upcoming:
+        "Shows your next upcoming meeting. Ignores any meeting that is already happening.",
+      ongoing:
+        "Shows the meeting you are currently in. Idle when nothing is happening.",
+    };
+
+    function applyVariantVisibility(variant, showBanner) {
+      const banner = els.variantBanner;
+      const copy = VARIANT_BANNERS[variant];
+      if (banner && copy) {
+        banner.textContent = copy;
+        banner.classList.toggle("hidden", !showBanner);
+      }
+      for (const el of document.querySelectorAll("[data-show-variant]")) {
+        const spec = el.getAttribute("data-show-variant") || "";
+        const list = spec.split(",").map((s) => s.trim());
+        el.classList.toggle("hidden", !list.includes(variant));
+      }
+    }
 
     function showAuthError(text) {
       els.authError.textContent = text;
@@ -236,6 +260,16 @@
         // repaints the accounts list. Calendars message comes separately.
         return;
       }
+      if (msg.kind === "variant") {
+        if (
+          msg.variant === "combined" ||
+          msg.variant === "upcoming" ||
+          msg.variant === "ongoing"
+        ) {
+          applyVariantVisibility(msg.variant, true);
+        }
+        return;
+      }
     });
 
     els.signInBtn.addEventListener("click", () => {
@@ -268,6 +302,10 @@
 
     // Initial hydration.
     bindConditionalDrivers();
+    // All sections visible (banner hidden) until the plugin's getVariant
+    // reply lands and narrows the view to the current action variant.
+    applyVariantVisibility("combined", false);
+    void client.send("sendToPlugin", { kind: "getVariant" });
     void readSettings().then((raw) => {
       const settings = applyFormDefaults(raw);
       renderAccounts(settings.accounts);

@@ -10,12 +10,42 @@
       "Name": "Meeting countdown",
       "UUID": "com.ewels.deckcal.countdown",
       "Icon": "imgs/actions/countdown/icon",
-      "Tooltip": "Live countdown to your next Google Calendar meeting.",
+      "Tooltip": "Live countdown to your next Google Calendar meeting. Shows whichever is most relevant: the current meeting, or the next one.",
       "PropertyInspectorPath": "ui/countdown.html",
       "Controllers": ["Keypad"],
       "States": [
         {
           "Image": "imgs/actions/countdown/key",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Upcoming meeting",
+      "UUID": "com.ewels.deckcal.upcoming",
+      "Icon": "imgs/actions/upcoming/icon",
+      "Tooltip": "Countdown to your next Google Calendar meeting. Ignores any meeting that's already happening.",
+      "PropertyInspectorPath": "ui/countdown.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "imgs/actions/upcoming/key",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "Name": "Ongoing meeting",
+      "UUID": "com.ewels.deckcal.ongoing",
+      "Icon": "imgs/actions/ongoing/icon",
+      "Tooltip": "Status of the meeting you're currently in. Idle when nothing is happening.",
+      "PropertyInspectorPath": "ui/countdown.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "imgs/actions/ongoing/key",
           "TitleAlignment": "middle",
           "ShowTitle": false
         }

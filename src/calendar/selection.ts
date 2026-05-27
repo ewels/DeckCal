@@ -7,7 +7,14 @@ import {
 } from "../settings";
 import type { CalendarEvent } from "./client";
 
-export type FooterBand = "none" | "ooo" | "focus";
+export type FooterBand =
+  | { kind: "none" }
+  | { kind: "ooo"; title: string }
+  | { kind: "focus"; title: string };
+
+export const FOOTER_BAND_NONE: FooterBand = { kind: "none" };
+
+export type SelectionMode = "combined" | "upcoming" | "ongoing";
 
 export type SelectionResult =
   | { mode: "idle"; footerBand: FooterBand }
@@ -60,11 +67,17 @@ function passesBasicFilters(
   return true;
 }
 
+export type SelectOptions = {
+  now?: number;
+  mode?: SelectionMode;
+};
+
 export function select(
   events: CalendarEvent[],
   settings: CountdownSettings,
-  now: number = Date.now(),
+  options: SelectOptions = {},
 ): SelectionResult {
+  const { now = Date.now(), mode = "combined" } = options;
   // Optional "ignore far-future" cutoff. Empty / undefined = no cutoff. The
   // PI prefills the field with DEFAULTS.ignoreAfterHours on first open so
   // users see (and can override) the suggested 4-hour horizon.
@@ -79,17 +92,23 @@ export function select(
   });
 
   // Compute footer band from ongoing special events.
-  let footerBand: FooterBand = "none";
+  let footerBand: FooterBand = FOOTER_BAND_NONE;
   for (const e of filtered) {
     if (!(e.startMs <= now && now < e.endMs)) continue;
     const sm = specialMode(e, settings);
     if (sm !== "footerBand") continue;
     if (e.eventType === "focusTime") {
-      footerBand = "focus";
+      footerBand = {
+        kind: "focus",
+        title: e.summary?.trim() || "Focus time",
+      };
       break; // focus wins
     }
     if (e.eventType === "outOfOffice") {
-      footerBand = "ooo";
+      footerBand = {
+        kind: "ooo",
+        title: e.summary?.trim() || "Out of office",
+      };
     }
   }
 
@@ -125,25 +144,27 @@ export function select(
   const imminentMs =
     toNumber(settings.imminentFillMinutes, DEFAULTS.imminentFillMinutes) *
     60_000;
-  const imminentUp = upcoming.find((e) => e.startMs - now <= imminentMs);
-  if (imminentUp) {
-    const prevEnd = filtered
-      .filter((e) => e.endMs <= now)
-      .reduce((max, e) => (e.endMs > max ? e.endMs : max), 0);
-    const referenceMs = prevEnd > 0 ? prevEnd : now - 60 * 60_000;
-    const gapMs = Math.max(60_000, imminentUp.startMs - referenceMs);
-    const gapElapsedMs = Math.max(0, Math.min(gapMs, now - referenceMs));
-    return {
-      mode: "upcoming",
-      event: imminentUp,
-      gapMs,
-      gapElapsedMs,
-      extraCount: overlapCount(imminentUp),
-      footerBand,
-    };
+  if (mode !== "ongoing") {
+    const imminentUp = upcoming.find((e) => e.startMs - now <= imminentMs);
+    if (imminentUp) {
+      const prevEnd = filtered
+        .filter((e) => e.endMs <= now)
+        .reduce((max, e) => (e.endMs > max ? e.endMs : max), 0);
+      const referenceMs = prevEnd > 0 ? prevEnd : now - 60 * 60_000;
+      const gapMs = Math.max(60_000, imminentUp.startMs - referenceMs);
+      const gapElapsedMs = Math.max(0, Math.min(gapMs, now - referenceMs));
+      return {
+        mode: "upcoming",
+        event: imminentUp,
+        gapMs,
+        gapElapsedMs,
+        extraCount: overlapCount(imminentUp),
+        footerBand,
+      };
+    }
   }
 
-  if (ongoing.length > 0) {
+  if (mode !== "upcoming" && ongoing.length > 0) {
     // Pick the most recently started.
     const chosen = ongoing.reduce((acc, e) =>
       e.startMs > acc.startMs ? e : acc,
@@ -157,7 +178,7 @@ export function select(
     };
   }
 
-  if (upcoming.length > 0) {
+  if (mode !== "ongoing" && upcoming.length > 0) {
     const chosen = upcoming[0];
     // Anchor the gap to the most recent prior event end. If none in the
     // window, fall back to one hour before now so the top bar still has a

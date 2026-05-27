@@ -17,7 +17,9 @@ import {
   removeAccount,
   saveAccount,
 } from "../calendar/auth";
+import type { CalendarSummary } from "../calendar/client";
 import { detectConference, pickAttachment } from "../calendar/conferencing";
+import type { SelectionMode } from "../calendar/selection";
 import {
   acknowledgeForKey,
   dropAccount,
@@ -40,24 +42,27 @@ import {
 import { openInApp, openUrl } from "../util/launch";
 import { log } from "../util/log";
 
-type CalendarItem = { id: string; summary: string; primary: boolean };
+type CalendarsByAccount = Record<
+  string,
+  { email: string; items: CalendarSummary[] }
+>;
 
 type IncomingMessage =
   | { kind: "startAuth" }
   | { kind: "signOut"; sub?: string }
-  | { kind: "listCalendars" };
+  | { kind: "listCalendars" }
+  | { kind: "getVariant" };
 
 type OutgoingMessage =
   | { kind: "authResult"; ok: true; account: Account }
   | { kind: "authResult"; ok: false; error: string }
-  | {
-      kind: "calendars";
-      byAccount: Record<string, { email: string; items: CalendarItem[] }>;
-    }
-  | { kind: "signedOut" };
+  | { kind: "calendars"; byAccount: CalendarsByAccount }
+  | { kind: "signedOut" }
+  | { kind: "variant"; variant: SelectionMode };
 
-@action({ UUID: "com.ewels.deckcal.countdown" })
-export class CountdownAction extends SingletonAction<CountdownSettings> {
+abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
+  protected abstract readonly selectionMode: SelectionMode;
+
   private readonly longPressTimers = new Map<
     string,
     { timer: ReturnType<typeof setTimeout>; fired: boolean }
@@ -89,12 +94,17 @@ export class CountdownAction extends SingletonAction<CountdownSettings> {
     if (migration.changed || settings !== ev.payload.settings) {
       await ev.action.setSettings(settings);
     }
-    registerKey(ev.action, settings);
+    registerKey(ev.action, settings, this.selectionMode);
   }
 
   override async onWillDisappear(
     ev: WillDisappearEvent<CountdownSettings>,
   ): Promise<void> {
+    const pending = this.longPressTimers.get(ev.action.id);
+    if (pending) {
+      clearTimeout(pending.timer);
+      this.longPressTimers.delete(ev.action.id);
+    }
     unregisterKey(ev.action.id);
   }
 
@@ -182,6 +192,23 @@ export class CountdownAction extends SingletonAction<CountdownSettings> {
       await this.sendCalendars(ev);
       return;
     }
+
+    if (msg.kind === "getVariant") {
+      await this.send(ev, { kind: "variant", variant: this.selectionMode });
+      return;
+    }
+  }
+
+  private async buildCalendarsByAccount(
+    accounts: Account[],
+  ): Promise<CalendarsByAccount> {
+    const entries = await Promise.all(
+      accounts.map(async (acct) => {
+        const items = await listKnownCalendars(acct.sub);
+        return [acct.sub, { email: acct.email, items }] as const;
+      }),
+    );
+    return Object.fromEntries(entries);
   }
 
   private async sendCalendars(
@@ -189,19 +216,9 @@ export class CountdownAction extends SingletonAction<CountdownSettings> {
   ): Promise<void> {
     if (!ev.action.isKey()) return;
     const current = await ev.action.getSettings();
-    const byAccount: Record<string, { email: string; items: CalendarItem[] }> =
-      {};
-    for (const acct of current.accounts ?? []) {
-      const items = await listKnownCalendars(acct.sub);
-      byAccount[acct.sub] = {
-        email: acct.email,
-        items: items.map((c) => ({
-          id: c.id,
-          summary: c.summary,
-          primary: c.primary,
-        })),
-      };
-    }
+    const byAccount = await this.buildCalendarsByAccount(
+      current.accounts ?? [],
+    );
     await this.send(ev, { kind: "calendars", byAccount });
   }
 
@@ -301,21 +318,7 @@ export class CountdownAction extends SingletonAction<CountdownSettings> {
         ok: true,
         account: { sub: info.sub, email: info.email },
       } as unknown as JsonValue);
-      const byAccount: Record<
-        string,
-        { email: string; items: CalendarItem[] }
-      > = {};
-      for (const acct of nextAccounts) {
-        const items = await listKnownCalendars(acct.sub);
-        byAccount[acct.sub] = {
-          email: acct.email,
-          items: items.map((c) => ({
-            id: c.id,
-            summary: c.summary,
-            primary: c.primary,
-          })),
-        };
-      }
+      const byAccount = await this.buildCalendarsByAccount(nextAccounts);
       await streamDeck.ui.sendToPropertyInspector({
         kind: "calendars",
         byAccount,
@@ -343,4 +346,19 @@ export class CountdownAction extends SingletonAction<CountdownSettings> {
       } as unknown as JsonValue);
     }
   }
+}
+
+@action({ UUID: "com.ewels.deckcal.countdown" })
+export class CountdownAction extends BaseCountdownAction {
+  protected readonly selectionMode: SelectionMode = "combined";
+}
+
+@action({ UUID: "com.ewels.deckcal.upcoming" })
+export class UpcomingAction extends BaseCountdownAction {
+  protected readonly selectionMode: SelectionMode = "upcoming";
+}
+
+@action({ UUID: "com.ewels.deckcal.ongoing" })
+export class OngoingAction extends BaseCountdownAction {
+  protected readonly selectionMode: SelectionMode = "ongoing";
 }

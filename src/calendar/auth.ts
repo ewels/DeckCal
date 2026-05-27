@@ -204,7 +204,9 @@ export async function authorize(): Promise<AccountInfo> {
   // If the user dismissed the Calendar permission, the token works for sign-in
   // but is useless to us — fail loudly rather than store dead tokens.
   const grantedScopes = (tokens.scope ?? "").split(/\s+/);
-  if (!grantedScopes.includes("https://www.googleapis.com/auth/calendar.readonly")) {
+  if (
+    !grantedScopes.includes("https://www.googleapis.com/auth/calendar.readonly")
+  ) {
     throw new AuthError(
       'Calendar permission not granted. Re-run sign-in and tick "See events on your Google Calendar" on the consent screen.',
     );

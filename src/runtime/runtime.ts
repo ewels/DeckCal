@@ -6,7 +6,7 @@ import {
   type CalendarEvent,
   listEvents,
 } from "../calendar/client";
-import { select } from "../calendar/selection";
+import { type SelectionMode, select } from "../calendar/selection";
 import { buildSvgTile, type RenderState } from "../render/icon";
 import {
   type CountdownSettings,
@@ -42,6 +42,7 @@ type AccountState = {
 type KeyRegistration = {
   action: KeyAction<CountdownSettings>;
   settings: CountdownSettings;
+  selectionMode: SelectionMode;
   lastDataUrl?: string;
 };
 
@@ -155,11 +156,12 @@ async function pollAccount(state: AccountState): Promise<void> {
 
 async function runPoll(): Promise<void> {
   const subs = activeAccountSubs();
-  for (const sub of subs) {
-    const state = await ensureAccountClient(sub);
-    if (!state) continue;
-    await pollAccount(state);
-  }
+  const states = await Promise.all(
+    Array.from(subs, (sub) => ensureAccountClient(sub)),
+  );
+  await Promise.all(
+    states.filter((s): s is AccountState => s !== null).map(pollAccount),
+  );
 
   // Prune acknowledged IDs that no longer correspond to live events.
   const live = new Set<string>();
@@ -206,7 +208,7 @@ function toRenderState(
   const filtered = allEvents.filter((e) =>
     wanted.has(selKey(e.accountSub, e.calendarId)),
   );
-  const result = select(filtered, reg.settings);
+  const result = select(filtered, reg.settings, { mode: reg.selectionMode });
 
   const imminentMs =
     toNumber(reg.settings.imminentFillMinutes, DEFAULTS.imminentFillMinutes) *
@@ -220,7 +222,10 @@ function toRenderState(
     const dim =
       dimAfterHours !== null &&
       result.event.startMs - Date.now() > dimAfterHours * 3600_000;
-    const dimOpacityPct = toNumber(reg.settings.dimOpacity, DEFAULTS.dimOpacity);
+    const dimOpacityPct = toNumber(
+      reg.settings.dimOpacity,
+      DEFAULTS.dimOpacity,
+    );
     return {
       mode: "upcoming",
       remainingMs: Math.max(0, result.event.startMs - Date.now()),
@@ -302,8 +307,9 @@ function stopLoops(): void {
 export function registerKey(
   action: KeyAction<CountdownSettings>,
   settings: CountdownSettings,
+  selectionMode: SelectionMode = "combined",
 ): void {
-  keys.set(action.id, { action, settings });
+  keys.set(action.id, { action, settings, selectionMode });
   startLoops();
   void renderAllKeys();
 }
@@ -362,7 +368,7 @@ export async function acknowledgeForKey(actionId: string): Promise<void> {
   if (!reg) return;
   const filtered = filteredEventsForKey(actionId);
   if (!filtered) return;
-  const result = select(filtered, reg.settings);
+  const result = select(filtered, reg.settings, { mode: reg.selectionMode });
   if (result.mode !== "ongoing") return;
   await updateGlobalSettings((g) => {
     const acked = new Set(g.acknowledgedEventIds ?? []);
@@ -382,7 +388,7 @@ export function getActiveSelectionForKey(
   if (!reg) return null;
   const filtered = filteredEventsForKey(actionId);
   if (!filtered) return null;
-  return select(filtered, reg.settings);
+  return select(filtered, reg.settings, { mode: reg.selectionMode });
 }
 
 // Called from the property inspector bridge when a new account signs in or

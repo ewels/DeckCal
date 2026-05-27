@@ -6,8 +6,9 @@
     <script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
     <style>
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
       }
       .help {
         display: block;
@@ -136,10 +137,21 @@
       .hidden {
         display: none;
       }
+      .variant-banner {
+        margin: 0 0 8px;
+        padding: 6px 8px;
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 4px;
+        color: var(--color-content-secondary, #bbb);
+        font-size: 11px;
+        line-height: 1.4;
+      }
     </style>
   </head>
 
   <body>
+    <div id="variantBanner" class="variant-banner hidden"></div>
     <div class="section">Accounts</div>
     <div id="accountList"></div>
     <div class="acct">
@@ -155,174 +167,181 @@
         <small class="help">Sign in to load your calendars.</small>
       </div>
 
-    <div class="section">Behavior</div>
-    <sdpi-item label="Long press (ms)">
-      <sdpi-textfield
-        setting="longPressThresholdMs"
-        inputmode="numeric"
-        pattern="[0-9]*"
-        placeholder="600"
-      ></sdpi-textfield>
-    </sdpi-item>
-    <sdpi-item label="Imminent fill (min)">
-      <sdpi-textfield
-        setting="imminentFillMinutes"
-        inputmode="numeric"
-        pattern="[0-9]*"
-        placeholder="5"
-      ></sdpi-textfield>
-    </sdpi-item>
-    <small class="help">
-      In the final N minutes before the meeting starts (or ends), the icon
-      progressively fills with yellow (countdown to start) or green (countdown
-      to end).
-    </small>
-    <sdpi-item label="When meeting starts">
-      <sdpi-select setting="meetingStartBehavior" default="flash">
-        <option value="flash">Flash yellow until I press the key</option>
-        <option value="none">Do nothing (go straight to in-progress)</option>
-      </sdpi-select>
-    </sdpi-item>
+      <div class="section">Behavior</div>
+      <sdpi-item label="Long press (ms)">
+        <sdpi-textfield
+          setting="longPressThresholdMs"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="600"
+        ></sdpi-textfield>
+      </sdpi-item>
+      <sdpi-item
+        label="Imminent fill (min)"
+        data-show-variant="combined,upcoming"
+      >
+        <sdpi-textfield
+          setting="imminentFillMinutes"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="5"
+        ></sdpi-textfield>
+      </sdpi-item>
+      <small class="help" data-show-variant="combined,upcoming">
+        In the final N minutes before the meeting starts, the icon progressively
+        fills with yellow.
+      </small>
+      <sdpi-item
+        label="When meeting starts"
+        data-show-variant="combined,ongoing"
+      >
+        <sdpi-select setting="meetingStartBehavior" default="flash">
+          <option value="flash">Flash yellow until I press the key</option>
+          <option value="none">Do nothing (go straight to in-progress)</option>
+        </sdpi-select>
+      </sdpi-item>
 
-    <div class="section">Next meeting press</div>
-    <small class="help">
-      What pressing the key does when no meeting is currently ongoing.
-    </small>
-    <sdpi-item label="Action">
-      <sdpi-select setting="nextMeetingActionType" default="url">
-        <option value="url">Open URL</option>
-        <option value="app">Open app</option>
-      </sdpi-select>
-    </sdpi-item>
-    <sdpi-item label="URL" data-show-when="nextMeetingActionType=url">
-      <sdpi-textfield
-        setting="nextMeetingUrl"
-        placeholder="https://calendar.google.com"
-      ></sdpi-textfield>
-    </sdpi-item>
-    <sdpi-item label="App" data-show-when="nextMeetingActionType=app">
-      <sdpi-textfield
-        setting="nextMeetingApp"
-        placeholder="Google Calendar"
-      ></sdpi-textfield>
-    </sdpi-item>
+      <div class="section">Next meeting press</div>
+      <small class="help">
+        What pressing the key does when no meeting is currently ongoing.
+      </small>
+      <sdpi-item label="Action">
+        <sdpi-select setting="nextMeetingActionType" default="url">
+          <option value="url">Open URL</option>
+          <option value="app">Open app</option>
+        </sdpi-select>
+      </sdpi-item>
+      <sdpi-item label="URL" data-show-when="nextMeetingActionType=url">
+        <sdpi-textfield
+          setting="nextMeetingUrl"
+          placeholder="https://calendar.google.com"
+        ></sdpi-textfield>
+      </sdpi-item>
+      <sdpi-item label="App" data-show-when="nextMeetingActionType=app">
+        <sdpi-textfield
+          setting="nextMeetingApp"
+          placeholder="Google Calendar"
+        ></sdpi-textfield>
+      </sdpi-item>
 
-    <div class="section">Join meeting press</div>
-    <small class="help">
-      For ongoing meetings, choose whether to open the meeting URL in your
-      browser or hand it off to a desktop app. On macOS the app field accepts
-      a name or full path (passed to <code>open -a</code>); on Windows, the
-      full executable path or registered app name.
-    </small>
+      <div data-show-variant="combined,ongoing">
+        <div class="section">Join meeting press</div>
+        <small class="help">
+          For ongoing meetings, choose whether to open the meeting URL in your
+          browser or hand it off to a desktop app. On macOS the app field
+          accepts a name or full path (passed to <code>open -a</code>); on
+          Windows, the full executable path or registered app name.
+        </small>
 
-    <sdpi-item label="Google Meet">
-      <sdpi-select setting="providerMeetType" default="url">
-        <option value="url">Open URL</option>
-        <option value="app">Open app</option>
-      </sdpi-select>
-    </sdpi-item>
-    <sdpi-item label="Meet app" data-show-when="providerMeetType=app">
-      <sdpi-textfield
-        setting="providerMeetApp"
-        placeholder="Google Chrome"
-      ></sdpi-textfield>
-    </sdpi-item>
+        <sdpi-item label="Google Meet">
+          <sdpi-select setting="providerMeetType" default="url">
+            <option value="url">Open URL</option>
+            <option value="app">Open app</option>
+          </sdpi-select>
+        </sdpi-item>
+        <sdpi-item label="Meet app" data-show-when="providerMeetType=app">
+          <sdpi-textfield
+            setting="providerMeetApp"
+            placeholder="Google Chrome"
+          ></sdpi-textfield>
+        </sdpi-item>
 
-    <sdpi-item label="Zoom">
-      <sdpi-select setting="providerZoomType" default="url">
-        <option value="url">Open URL</option>
-        <option value="app">Open app</option>
-      </sdpi-select>
-    </sdpi-item>
-    <sdpi-item label="Zoom app" data-show-when="providerZoomType=app">
-      <sdpi-textfield
-        setting="providerZoomApp"
-        placeholder="zoom.us"
-      ></sdpi-textfield>
-    </sdpi-item>
+        <sdpi-item label="Zoom">
+          <sdpi-select setting="providerZoomType" default="url">
+            <option value="url">Open URL</option>
+            <option value="app">Open app</option>
+          </sdpi-select>
+        </sdpi-item>
+        <sdpi-item label="Zoom app" data-show-when="providerZoomType=app">
+          <sdpi-textfield
+            setting="providerZoomApp"
+            placeholder="zoom.us"
+          ></sdpi-textfield>
+        </sdpi-item>
 
-    <sdpi-item label="Microsoft Teams">
-      <sdpi-select setting="providerTeamsType" default="url">
-        <option value="url">Open URL</option>
-        <option value="app">Open app</option>
-      </sdpi-select>
-    </sdpi-item>
-    <sdpi-item label="Teams app" data-show-when="providerTeamsType=app">
-      <sdpi-textfield
-        setting="providerTeamsApp"
-        placeholder="Microsoft Teams"
-      ></sdpi-textfield>
-    </sdpi-item>
+        <sdpi-item label="Microsoft Teams">
+          <sdpi-select setting="providerTeamsType" default="url">
+            <option value="url">Open URL</option>
+            <option value="app">Open app</option>
+          </sdpi-select>
+        </sdpi-item>
+        <sdpi-item label="Teams app" data-show-when="providerTeamsType=app">
+          <sdpi-textfield
+            setting="providerTeamsApp"
+            placeholder="Microsoft Teams"
+          ></sdpi-textfield>
+        </sdpi-item>
+      </div>
 
-    <div class="section">Filters</div>
-    <sdpi-item label="All-day">
-      <sdpi-checkbox
-        setting="includeAllDay"
-        label="Include all-day events"
-      ></sdpi-checkbox>
-    </sdpi-item>
-    <sdpi-item label="Tentative">
-      <sdpi-checkbox
-        setting="includeTentative"
-        label="Include tentative events"
-        default="true"
-      ></sdpi-checkbox>
-    </sdpi-item>
-    <sdpi-item label="Declined">
-      <sdpi-checkbox
-        setting="includeDeclined"
-        label="Include declined events"
-      ></sdpi-checkbox>
-    </sdpi-item>
-    <sdpi-item label="Ignore after (h)">
-      <sdpi-textfield
-        setting="ignoreAfterHours"
-        inputmode="decimal"
-        placeholder="Always show"
-        default="4"
-      ></sdpi-textfield>
-    </sdpi-item>
-    <small class="help">
-      Drop events starting more than this many hours from now. Empty = always
-      show.
-    </small>
-    <sdpi-item label="Dim after (h)">
-      <sdpi-textfield
-        setting="dimAfterHours"
-        inputmode="decimal"
-        placeholder="Always full"
-        default="2"
-      ></sdpi-textfield>
-    </sdpi-item>
-    <sdpi-item label="Dim opacity (%)">
-      <sdpi-textfield
-        setting="dimOpacity"
-        inputmode="numeric"
-        pattern="[0-9]*"
-        placeholder="30"
-        default="30"
-      ></sdpi-textfield>
-    </sdpi-item>
-    <small class="help">
-      Render the icon text at this opacity when the event is more than the
-      hours above away. Clear the hours field to disable dimming entirely.
-    </small>
+      <div class="section">Filters</div>
+      <sdpi-item label="All-day">
+        <sdpi-checkbox
+          setting="includeAllDay"
+          label="Include all-day events"
+        ></sdpi-checkbox>
+      </sdpi-item>
+      <sdpi-item label="Tentative">
+        <sdpi-checkbox
+          setting="includeTentative"
+          label="Include tentative events"
+          default="true"
+        ></sdpi-checkbox>
+      </sdpi-item>
+      <sdpi-item label="Declined">
+        <sdpi-checkbox
+          setting="includeDeclined"
+          label="Include declined events"
+        ></sdpi-checkbox>
+      </sdpi-item>
+      <sdpi-item label="Ignore after (h)" data-show-variant="combined,upcoming">
+        <sdpi-textfield
+          setting="ignoreAfterHours"
+          inputmode="decimal"
+          placeholder="Always show"
+          default="4"
+        ></sdpi-textfield>
+      </sdpi-item>
+      <small class="help" data-show-variant="combined,upcoming">
+        Drop events starting more than this many hours from now. Empty = always
+        show.
+      </small>
+      <sdpi-item label="Dim after (h)" data-show-variant="combined,upcoming">
+        <sdpi-textfield
+          setting="dimAfterHours"
+          inputmode="decimal"
+          placeholder="Always full"
+          default="2"
+        ></sdpi-textfield>
+      </sdpi-item>
+      <sdpi-item label="Dim opacity (%)" data-show-variant="combined,upcoming">
+        <sdpi-textfield
+          setting="dimOpacity"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="30"
+          default="30"
+        ></sdpi-textfield>
+      </sdpi-item>
+      <small class="help" data-show-variant="combined,upcoming">
+        Render the icon text at this opacity when the event is more than the
+        hours above away. Clear the hours field to disable dimming entirely.
+      </small>
 
-    <div class="section">Special events</div>
-    <sdpi-item label="Out of office">
-      <sdpi-select setting="outOfOfficeMode" default="footerBand">
-        <option value="footerBand">Show only as footer band (grey)</option>
-        <option value="ignore">Ignore completely</option>
-        <option value="regular">Treat as regular event</option>
-      </sdpi-select>
-    </sdpi-item>
-    <sdpi-item label="Focus time">
-      <sdpi-select setting="focusMode" default="footerBand">
-        <option value="footerBand">Show only as footer band (purple)</option>
-        <option value="ignore">Ignore completely</option>
-        <option value="regular">Treat as regular event</option>
-      </sdpi-select>
-    </sdpi-item>
+      <div class="section">Special events</div>
+      <sdpi-item label="Out of office">
+        <sdpi-select setting="outOfOfficeMode" default="footerBand">
+          <option value="footerBand">Show only as footer band (grey)</option>
+          <option value="ignore">Ignore completely</option>
+          <option value="regular">Treat as regular event</option>
+        </sdpi-select>
+      </sdpi-item>
+      <sdpi-item label="Focus time">
+        <sdpi-select setting="focusMode" default="footerBand">
+          <option value="footerBand">Show only as footer band (purple)</option>
+          <option value="ignore">Ignore completely</option>
+          <option value="regular">Treat as regular event</option>
+        </sdpi-select>
+      </sdpi-item>
     </div>
 
     <script src="countdown.js"></script>

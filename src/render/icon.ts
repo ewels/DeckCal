@@ -1,7 +1,7 @@
 // SVG icon builder for the meeting-countdown action. Returns a
 // `data:image/svg+xml;base64,...` URL ready for `action.setImage(...)`.
 
-export type FooterBand = "none" | "ooo" | "focus";
+import type { FooterBand } from "../calendar/selection";
 
 export type RenderState =
   | { mode: "idle"; footerBand: FooterBand }
@@ -40,7 +40,10 @@ export type RenderInput = {
 
 const SIZE = 144;
 const TOP_BAR_HEIGHT = 4;
-const FOOTER_BAND_HEIGHT = 6;
+const FOOTER_BAND_HEIGHT = 22;
+const FOOTER_BAND_FONT_SIZE = 14;
+const FOOTER_BAND_Y = SIZE - FOOTER_BAND_HEIGHT;
+const FOOTER_BAND_TEXT_Y = SIZE - 6;
 
 const COLORS = {
   bg: "#0d0d0d",
@@ -112,9 +115,15 @@ function dataUrl(svg: string): string {
 }
 
 function bandRect(band: FooterBand): string {
-  if (band === "none") return "";
-  const fill = band === "focus" ? COLORS.bandFocus : COLORS.bandOoo;
-  return `<rect x="0" y="${SIZE - FOOTER_BAND_HEIGHT}" width="${SIZE}" height="${FOOTER_BAND_HEIGHT}" fill="${fill}"/>`;
+  if (band.kind === "none") return "";
+  const fill = band.kind === "focus" ? COLORS.bandFocus : COLORS.bandOoo;
+  // Grey OOO band: dark text reads best; purple focus band: white.
+  const textColor = band.kind === "focus" ? COLORS.textLight : COLORS.textDark;
+  const label = escapeXml(truncateTitle(band.title, 18));
+  return [
+    `<rect x="0" y="${FOOTER_BAND_Y}" width="${SIZE}" height="${FOOTER_BAND_HEIGHT}" fill="${fill}"/>`,
+    `<text x="${SIZE / 2}" y="${FOOTER_BAND_TEXT_Y}" font-family="Helvetica,Arial,sans-serif" font-size="${FOOTER_BAND_FONT_SIZE}" font-weight="600" fill="${textColor}" text-anchor="middle">${label}</text>`,
+  ].join("");
 }
 
 function truncateTitle(title: string, max = 12): string {
@@ -203,7 +212,10 @@ function centerText(
   ].join("");
 }
 
-function topProgressBar(progress: number, color: string = COLORS.topBar): string {
+function topProgressBar(
+  progress: number,
+  color: string = COLORS.topBar,
+): string {
   const w = Math.max(0, Math.min(1, progress)) * SIZE;
   return `<rect x="0" y="0" width="${w}" height="${TOP_BAR_HEIGHT}" fill="${color}"/>`;
 }
@@ -286,9 +298,8 @@ export function buildSvgTile(input: RenderInput): string {
     parts.push(topProgressBar(progress));
     // boundary = how far the colored fill extends from the left. The text
     // splitter uses it to render black on the fill / white on the dark.
-    const boundary = fill.ratio > 0
-      ? Math.max(1, Math.round(fill.ratio * SIZE))
-      : 0;
+    const boundary =
+      fill.ratio > 0 ? Math.max(1, Math.round(fill.ratio * SIZE)) : 0;
     const label = formatUpcomingLabel(
       state.remainingMs,
       state.eventStartMs,
@@ -296,7 +307,11 @@ export function buildSvgTile(input: RenderInput): string {
     );
     const textBlock = [
       centerText(label, boundary),
-      footerStack(state.title, state.extraCount, state.footerBand !== "none"),
+      footerStack(
+        state.title,
+        state.extraCount,
+        state.footerBand.kind !== "none",
+      ),
     ].join("");
     // Dim text for events still well in the future. The progress bar and
     // band keep full opacity so the timeline cues stay readable.
@@ -328,14 +343,16 @@ export function buildSvgTile(input: RenderInput): string {
   // While the meeting-start flash is unacknowledged, replace the countdown
   // with "NOW" — paired with the yellow pulse, it's a clearer alert than
   // a number that's just slowly counting up from the meeting duration.
-  const timeLabel = state.flashing
-    ? "NOW"
-    : formatRemaining(state.remainingMs);
+  const timeLabel = state.flashing ? "NOW" : formatRemaining(state.remainingMs);
   // Blue right-side text for ongoing meetings, so it's easy to tell apart
   // from the white text used for upcoming.
   parts.push(centerText(timeLabel, boundary, COLORS.topBar));
   parts.push(
-    footerStack(state.title, state.extraCount, state.footerBand !== "none"),
+    footerStack(
+      state.title,
+      state.extraCount,
+      state.footerBand.kind !== "none",
+    ),
   );
   parts.push(bandRect(state.footerBand));
   return dataUrl(wrap(parts.join("")));
