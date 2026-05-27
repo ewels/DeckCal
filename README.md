@@ -15,11 +15,11 @@ meeting's notes doc.
 
 ## Actions
 
-|                                                                                              | Action                | What it shows                                                                                           |
-| :------------------------------------------------------------------------------------------: | --------------------- | ------------------------------------------------------------------------------------------------------- |
+|                                                                                         | Action                | What it shows                                                                                          |
+| :-------------------------------------------------------------------------------------: | --------------------- | ------------------------------------------------------------------------------------------------------ |
 | <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | The ongoing meeting if you're in one, otherwise the next upcoming meeting. The "do everything" action. |
-| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/upcoming/key.svg" alt="" width="56">  | **Upcoming meeting**  | Only the next upcoming meeting. Ignores meetings already in progress.                                   |
-| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/ongoing/key.svg" alt="" width="56">   | **Ongoing meeting**   | Only the meeting you're currently in. Idle when nothing is happening.                                   |
+| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/upcoming/key.svg" alt="" width="56">  | **Upcoming meeting**  | Only the next upcoming meeting. Ignores meetings already in progress.                                  |
+|  <img src="com.ewels.deckcal.sdPlugin/imgs/actions/ongoing/key.svg" alt="" width="56">  | **Ongoing meeting**   | Only the meeting you're currently in. Idle when nothing is happening.                                  |
 
 ## What you get on the key
 
