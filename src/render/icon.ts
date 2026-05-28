@@ -373,8 +373,9 @@ export function buildSvgTile(input: RenderInput): string {
     return dataUrl(wrap(parts.join("")));
   }
 
-  // ongoing — no green imminent fill (the top progress bar already shows
-  // meeting elapsed, so the full-tile fill was redundant).
+  // ongoing — full-tile green fill at 50% opacity that grows left→right
+  // with meeting progress. Single-key only (no block sweep across adjacent
+  // keys like the upcoming imminent bar does).
   let boundary = 0;
   if (state.flashing && flashOn) {
     // Flash overlay covers the entire tile in yellow → treat the text
@@ -383,13 +384,18 @@ export function buildSvgTile(input: RenderInput): string {
       `<rect x="0" y="0" width="${SIZE}" height="${SIZE}" fill="${COLORS.flash}"/>`,
     );
     boundary = SIZE;
+  } else {
+    const progress =
+      state.totalMs > 0
+        ? (state.totalMs - state.remainingMs) / state.totalMs
+        : 1;
+    const fillWidth = Math.max(0, Math.min(1, progress)) * SIZE;
+    if (fillWidth > 0) {
+      parts.push(
+        `<rect x="0" y="0" width="${fillWidth}" height="${SIZE}" fill="${COLORS.ongoingFill}" opacity="0.5"/>`,
+      );
+    }
   }
-
-  const progress =
-    state.totalMs > 0 ? (state.totalMs - state.remainingMs) / state.totalMs : 1;
-  // Green top bar so ongoing meetings are immediately distinguishable from
-  // the blue bar used for upcoming.
-  parts.push(topProgressBar(progress, COLORS.ongoingFill));
   // While the meeting-start flash is unacknowledged, replace the countdown
   // with "NOW" — paired with the yellow pulse, it's a clearer alert than
   // a number that's just slowly counting up from the meeting duration.
