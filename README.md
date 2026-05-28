@@ -28,14 +28,15 @@ meeting's notes doc.
 
 ### Multi-key sweep
 
+https://github.com/user-attachments/assets/42d28e97-5eb9-4187-94fb-ffbc773e179a
+
 Place two or more **Meeting countdown** (or **Upcoming meeting**) keys next
 to each other and the yellow imminent-fill bar sweeps across them as a
 single band in the last 5 minutes before a meeting. A much more visible cue
 than a single key can give on its own.
 
-Short press joins the current meeting (Google Meet, Zoom, or Teams),
-configurable per-provider to either open the URL or hand it off to a desktop
-app. Long press opens the meeting's first attached doc, falling back to the
+Short press clears the flashing `NOW` and another joins the current meeting (Google Meet, Zoom, or Teams).
+Long press opens the meeting's first attached doc, falling back to the
 event detail page.
 
 ## Actions
