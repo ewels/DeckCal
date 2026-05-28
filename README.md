@@ -21,10 +21,17 @@ meeting's notes doc.
 |    <img src="docs/examples/future_23m.png" alt="" width="120">    | **Countdown to the next meeting.**<br>Time remaining, with a blue bar.                               |
 |    <img src="docs/examples/future_3m.png" alt="" width="120">     | **Imminent.**<br>In the last 5 minutes a yellow block gradually fills the key.                       |
 |   <img src="docs/examples/meeting_now.gif" alt="" width="120">    | **Meeting starts.**<br>Flashes `NOW` until you press. Pressing opens the meeting.                    |
-| <img src="docs/examples/ongoing_14m_left.png" alt="" width="120"> | **In the meeting.**<br>Time remaining, green bar shows time elapsed.                                 |
+| <img src="docs/examples/ongoing_18m_left.png" alt="" width="120"> | **In the meeting.**<br>Time remaining, green bar shows time elapsed.                                 |
 | <img src="docs/examples/tomorrow_dimmed.png" alt="" width="120">  | **Beyond today.**<br>Distant events are dimmed, events tomorrow get time of day instead of countdown |
 |    <img src="docs/examples/focus_time.png" alt="" width="120">    | **Focus time.**<br>Purple footer band, so you can still see the next regular meeting.                |
 |  <img src="docs/examples/out_of_office.png" alt="" width="120">   | **Out of office.**<br>Grey footer band so you can see the next meeting.                              |
+
+### Multi-key sweep
+
+Place two or more **Meeting countdown** (or **Upcoming meeting**) keys next
+to each other and the yellow imminent-fill bar sweeps across them as a
+single band in the last 5 minutes before a meeting. A much more visible cue
+than a single key can give on its own.
 
 Short press joins the current meeting (Google Meet, Zoom, or Teams),
 configurable per-provider to either open the URL or hand it off to a desktop

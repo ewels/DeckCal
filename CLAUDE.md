@@ -4,7 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Stream Deck plugin (`com.ewels.deckcal`, "DeckCal") that turns a key into a live Google Calendar countdown. One action: `com.ewels.deckcal.countdown` ("Meeting countdown"). The key auto-updates every second from a 60-second Google Calendar poll, surfacing the next meeting (or the current one if you are in it), with progress bars, an imminent-fill in the last 5 minutes, a flash on meeting start, and a footer band for OOO / focus overlaps.
+A Stream Deck plugin (`com.ewels.deckcal`, "DeckCal") that turns a key into a live Google Calendar countdown. Four actions, all driven by the same `BaseCountdownAction` and the same shared runtime:
+
+- `com.ewels.deckcal.countdown` — "Meeting countdown": ongoing if you're in one, otherwise next upcoming.
+- `com.ewels.deckcal.upcoming` — "Upcoming meeting": next upcoming only; ignores ongoing.
+- `com.ewels.deckcal.ongoing` — "Ongoing meeting": current meeting only; idle otherwise.
+- `com.ewels.deckcal.alert` — "Meeting alert": blank tile that lights up only during the meeting-start flash.
+
+The visible keys auto-update every second from a 60-second Google Calendar poll, with progress bars, a yellow imminent-fill in the last 5 minutes (sweeping across adjacent keys as one band when they resolve to the same meeting), a full-tile 50%-opacity green fill while a meeting is ongoing, a yellow flash on meeting start (auto-dismissed after `autoAckAfterMinutes`, default 5), and a footer band for OOO / focus overlaps.
 
 ## Commands
 
@@ -77,10 +84,14 @@ npm run build   # rollup re-emits the {"type":"module"} package.json
 
 ```
 src/
-  plugin.ts             bootstrap: registers the action + connect()
+  plugin.ts             bootstrap: registers the 4 actions + connect()
   settings.ts           CountdownSettings, GlobalSettings, DEFAULTS, resolveProvider/resolveNextMeeting
   actions/
-    countdown.ts        SingletonAction — key lifecycle, press handlers, PI bridge
+    countdown.ts        BaseCountdownAction + 4 subclasses (CountdownAction,
+                        UpcomingAction, OngoingAction, AlertAction) — shared
+                        key lifecycle, state-driven press dispatch, PI bridge.
+                        Subclasses differ only in `selectionMode` (combined /
+                        upcoming / ongoing) and `renderVariant` (alert).
   calendar/
     auth.ts             OAuth 2.0 PKCE loopback flow, token persistence in global settings
     client.ts           googleapis wrapper: listCalendars, listEvents, normalize → CalendarEvent
@@ -115,19 +126,25 @@ Flat keys (sdpi-components binds via flat `setting="X"` paths). `resolveProvider
 
 ### Key press lifecycle
 
-`CountdownAction.onKeyDown` records a timestamp and starts a `setTimeout(longPressThresholdMs)` (default 600 ms). If `onKeyUp` arrives first, clear the timer and dispatch the short-press branch. If the timer fires first, dispatch long press. This is the same pattern as `type-deck/src/actions/base.ts:242-281`.
+`BaseCountdownAction.onKeyDown` records a timestamp and starts a `setTimeout(longPressThresholdMs)` (default 600 ms). If `onKeyUp` arrives first, clear the timer and dispatch the short-press branch. If the timer fires first, dispatch long press. This is the same pattern as `type-deck/src/actions/base.ts:242-281`.
 
 Any keyDown also calls `acknowledgeForKey(actionId)`, which pushes the currently-ongoing event's ID into `global.acknowledgedEventIds`. The ticker uses that set to decide whether to flash an ongoing event — the user has seen the alert, no more flashing.
 
-Short press dispatch:
+Press dispatch is state-driven and shared by all four actions. `getPressContextForKey(actionId)` reads the cached selection for that key and reports one of `no-accounts`, `flashing`, `ongoing`, `upcoming`, or `idle`. The base class fans those into:
 
-- **ongoing** → `detectConference()` → look up the per-provider handler via `resolveProvider()` → `openInApp(app, url)` or `openUrl(url)`. If no conference detected, fall back to `event.htmlLink`.
+Short press:
+
+- **no-accounts** → run the OAuth flow.
+- **flashing** / **ongoing** → `detectConference()` → look up the per-provider handler via `resolveProvider()` → `openInApp(app, url)` or `openUrl(url)`. If no conference detected, fall back to `event.htmlLink`.
 - **upcoming** → `resolveNextMeeting()` → URL or app launcher.
+- **idle** → no-op.
 
-Long press dispatch:
+Long press:
 
-- First `event.attachments[].fileUrl` → open it.
-- Else `event.htmlLink`.
+- **flashing** / **ongoing** / **upcoming** → first `event.attachments[].fileUrl` if any, else `event.htmlLink`.
+- everything else → no-op.
+
+`AlertAction` overrides this with a much narrower rule: short press only triggers OAuth (when not signed in); long press only joins the meeting during the start-of-meeting flash. Everything else is silent so the alert tile stays out of the way of the user's other DeckCal keys.
 
 ### Selection rules
 
@@ -140,21 +157,26 @@ Long press dispatch:
 
 ### Render states
 
-`buildSvgTile({ state, flashOn })` outputs a `data:image/svg+xml;base64,…` URL. States:
+`buildSvgTile({ state, flashOn, variant })` outputs a `data:image/svg+xml;base64,…` URL (or, for the static error states, a path to a pre-rendered SVG asset under `imgs/states/`). States:
 
-- `idle` — calendar glyph + optional footer band.
-- `upcoming` — top progress (gap elapsed / gap total), imminent yellow fill in last N minutes, center countdown, +N footer, band.
-- `ongoing` — top progress (meeting elapsed / total), imminent green fill in last N minutes, optional yellow flash overlay driven by `flashOn` parity, center countdown, +N footer, band.
-- `authRequired` — red key glyph + "Sign in" text.
+- `idle` — calendar glyph (today's date) + optional footer band.
+- `upcoming` — blue top progress bar (gap elapsed / gap total), yellow imminent fill in the last N minutes (single rectangle spanning the imminent window), center countdown, +N footer, band. The runtime can pass a `block: { columns, indexInBlock }` so that when adjacent keys resolve to the same upcoming meeting with the same imminent window, the yellow fill is computed as one band stretching across all of them and each key paints just its slice.
+- `ongoing` — full-tile 50%-opacity green fill that grows left→right with meeting elapsed / total, optional yellow flash overlay driven by `flashOn` parity, center countdown ("NOW" while flashing), +N footer, band. Single-key only; no block sweep.
+- `authRequired` / `noCalendars` — static SVG assets returned directly.
 
-Text color is white by default; inverted to black when the yellow imminent fill is more than half covering the tile or when the flash overlay is on (green is dark enough to keep white text on top).
+`variant: "alert"` (used by `AlertAction`) suppresses everything except the surfaces that justify the alert tile's existence: the upcoming imminent yellow slice (no chrome, no text) and the ongoing meeting-start yellow flash. Every other state renders blank.
+
+Text color:
+
+- `upcoming` — white by default; the part of the text that overlaps the yellow imminent fill is rendered in dark via a clip-path split.
+- `ongoing` — blue (`COLORS.topBar`) by default so the in-meeting tile reads visually distinct from upcoming; on top of the yellow flash overlay the time renders entirely in dark.
 
 ### Property inspector bridge
 
 `countdown.js` uses `SDPIComponents.streamDeckClient`:
 
-- `.send("sendToPlugin", payload)` — outbound, three kinds: `startAuth`, `signOut`, `listCalendars`.
-- `.sendToPropertyInspector.subscribe(cb)` — inbound, three kinds: `authResult`, `calendars`, `signedOut`.
+- `.send("sendToPlugin", payload)` — outbound, four kinds: `startAuth`, `signOut`, `listCalendars`, `getVariant`. `getVariant` lets the PI ask the plugin which action UUID this key is bound to, so the same `countdown.html` panel can hide irrelevant fields for the upcoming / ongoing / alert variants.
+- `.sendToPropertyInspector.subscribe(cb)` — inbound, four kinds: `authResult`, `calendars`, `signedOut`, `variant`.
 - `.getSettings()` / `.setSettings()` — read/write the action settings.
 - `.didReceiveSettings.subscribe(cb)` — refresh the UI when something else changes settings (e.g., the plugin saving `account` after sign-in).
 
