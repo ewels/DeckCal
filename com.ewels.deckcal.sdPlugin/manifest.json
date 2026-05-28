@@ -50,6 +50,21 @@
           "ShowTitle": false
         }
       ]
+    },
+    {
+      "Name": "Meeting alert",
+      "UUID": "com.ewels.deckcal.alert",
+      "Icon": "imgs/actions/alert/icon",
+      "Tooltip": "Blank tile that only lights up the moment a meeting starts. Press to dismiss, long-press to join.",
+      "PropertyInspectorPath": "ui/countdown.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "imgs/actions/alert/key",
+          "TitleAlignment": "middle",
+          "ShowTitle": false
+        }
+      ]
     }
   ],
   "Category": "DeckCal",

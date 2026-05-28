@@ -190,40 +190,55 @@
         In the final N minutes before the meeting starts, the icon progressively
         fills with yellow.
       </small>
-      <sdpi-item
-        label="When meeting starts"
-        data-show-variant="combined,ongoing"
-      >
-        <sdpi-select setting="meetingStartBehavior" default="flash">
-          <option value="flash">Flash yellow until I press the key</option>
-          <option value="none">Do nothing (go straight to in-progress)</option>
-        </sdpi-select>
-      </sdpi-item>
+      <div data-show-variant="combined,ongoing,alert">
+        <sdpi-item label="When meeting starts">
+          <sdpi-select setting="meetingStartBehavior" default="flash">
+            <option value="flash">Flash yellow until I press the key</option>
+            <option value="none">
+              Do nothing (go straight to in-progress)
+            </option>
+          </sdpi-select>
+        </sdpi-item>
+        <sdpi-item label="Auto-dismiss (min)">
+          <sdpi-textfield
+            setting="autoAckAfterMinutes"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            placeholder="5"
+          ></sdpi-textfield>
+        </sdpi-item>
+        <small class="help">
+          Stop flashing automatically this many minutes after the meeting
+          starts, even if you never press the key. Clear to never auto-dismiss.
+        </small>
+      </div>
 
-      <div class="section">Next meeting press</div>
-      <small class="help">
-        What pressing the key does when no meeting is currently ongoing.
-      </small>
-      <sdpi-item label="Action">
-        <sdpi-select setting="nextMeetingActionType" default="url">
-          <option value="url">Open URL</option>
-          <option value="app">Open app</option>
-        </sdpi-select>
-      </sdpi-item>
-      <sdpi-item label="URL" data-show-when="nextMeetingActionType=url">
-        <sdpi-textfield
-          setting="nextMeetingUrl"
-          placeholder="https://calendar.google.com"
-        ></sdpi-textfield>
-      </sdpi-item>
-      <sdpi-item label="App" data-show-when="nextMeetingActionType=app">
-        <sdpi-textfield
-          setting="nextMeetingApp"
-          placeholder="Google Calendar"
-        ></sdpi-textfield>
-      </sdpi-item>
+      <div data-show-variant="combined,upcoming">
+        <div class="section">Next meeting press</div>
+        <small class="help">
+          What pressing the key does when no meeting is currently ongoing.
+        </small>
+        <sdpi-item label="Action">
+          <sdpi-select setting="nextMeetingActionType" default="url">
+            <option value="url">Open URL</option>
+            <option value="app">Open app</option>
+          </sdpi-select>
+        </sdpi-item>
+        <sdpi-item label="URL" data-show-when="nextMeetingActionType=url">
+          <sdpi-textfield
+            setting="nextMeetingUrl"
+            placeholder="https://calendar.google.com"
+          ></sdpi-textfield>
+        </sdpi-item>
+        <sdpi-item label="App" data-show-when="nextMeetingActionType=app">
+          <sdpi-textfield
+            setting="nextMeetingApp"
+            placeholder="Google Calendar"
+          ></sdpi-textfield>
+        </sdpi-item>
+      </div>
 
-      <div data-show-variant="combined,ongoing">
+      <div data-show-variant="combined,ongoing,alert">
         <div class="section">Join meeting press</div>
         <small class="help">
           For ongoing meetings, choose whether to open the meeting URL in your

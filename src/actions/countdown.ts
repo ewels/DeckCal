@@ -17,14 +17,15 @@ import {
   removeAccount,
   saveAccount,
 } from "../calendar/auth";
-import type { CalendarSummary } from "../calendar/client";
+import type { CalendarEvent, CalendarSummary } from "../calendar/client";
 import { detectConference, pickAttachment } from "../calendar/conferencing";
 import type { SelectionMode } from "../calendar/selection";
+import type { RenderVariant } from "../render/icon";
 import {
   acknowledgeForKey,
   dropAccount,
   forceRefresh,
-  getActiveSelectionForKey,
+  getPressContextForKey,
   listKnownCalendars,
   registerKey,
   unregisterKey,
@@ -53,15 +54,18 @@ type IncomingMessage =
   | { kind: "listCalendars" }
   | { kind: "getVariant" };
 
+type PaneVariant = SelectionMode | "alert";
+
 type OutgoingMessage =
   | { kind: "authResult"; ok: true; account: Account }
   | { kind: "authResult"; ok: false; error: string }
   | { kind: "calendars"; byAccount: CalendarsByAccount }
   | { kind: "signedOut" }
-  | { kind: "variant"; variant: SelectionMode };
+  | { kind: "variant"; variant: PaneVariant };
 
 abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
   protected abstract readonly selectionMode: SelectionMode;
+  protected readonly renderVariant: RenderVariant = "normal";
 
   private readonly longPressTimers = new Map<
     string,
@@ -94,7 +98,7 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     if (migration.changed || settings !== ev.payload.settings) {
       await ev.action.setSettings(settings);
     }
-    registerKey(ev.action, settings, this.selectionMode);
+    registerKey(ev.action, settings, this.selectionMode, this.renderVariant);
   }
 
   override async onWillDisappear(
@@ -194,7 +198,9 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     }
 
     if (msg.kind === "getVariant") {
-      await this.send(ev, { kind: "variant", variant: this.selectionMode });
+      const variant: PaneVariant =
+        this.renderVariant === "alert" ? "alert" : this.selectionMode;
+      await this.send(ev, { kind: "variant", variant });
       return;
     }
   }
@@ -229,35 +235,57 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     await streamDeck.ui.sendToPropertyInspector(msg as unknown as JsonValue);
   }
 
-  private async handleShortPress(
+  // Press model dispatch table:
+  //
+  //   state          short                long
+  //   no-accounts    runAuthFlow          —
+  //   idle           next-meeting         —
+  //   upcoming       next-meeting         notes (if attachment)
+  //   flashing       (ack on keyDown)     join (+ ack on keyDown)
+  //   ongoing        join                 notes (fallback htmlLink)
+  protected async handleShortPress(
     ev: KeyUpEvent<CountdownSettings>,
   ): Promise<void> {
     const settings = ev.payload.settings;
+    const { state, selection } = await getPressContextForKey(ev.action.id);
 
-    // No accounts yet — pressing the key starts the sign-in flow, same as
-    // clicking the button in the property inspector.
-    if (!settings.accounts || settings.accounts.length === 0) {
+    if (state === "no-accounts") {
       await this.runAuthFlow(ev.action);
       return;
     }
-
-    const sel = getActiveSelectionForKey(ev.action.id);
-
-    if (!sel || sel.mode === "idle") {
-      // No active event — fall through to the next-meeting action.
+    if (state === "idle" || state === "upcoming") {
       this.runNextMeetingAction(settings);
       return;
     }
+    if (state === "flashing") return; // ack already fired on keyDown
+    if (selection?.mode === "ongoing") {
+      this.joinMeeting(selection.event, settings);
+    }
+  }
 
-    if (sel.mode === "upcoming") {
-      this.runNextMeetingAction(settings);
+  protected async handleLongPress(
+    ev: KeyDownEvent<CountdownSettings>,
+  ): Promise<void> {
+    const settings = ev.payload.settings;
+    const { state, selection } = await getPressContextForKey(ev.action.id);
+
+    if (state === "no-accounts" || state === "idle") return;
+    if (!selection || selection.mode === "idle") return;
+
+    if (state === "flashing") {
+      this.joinMeeting(selection.event, settings);
       return;
     }
+    this.openNotes(selection.event);
+  }
 
-    // ongoing
-    const conf = detectConference(sel.event);
+  protected joinMeeting(
+    event: CalendarEvent,
+    settings: CountdownSettings,
+  ): void {
+    const conf = detectConference(event);
     if (!conf) {
-      if (sel.event.htmlLink) openUrl(sel.event.htmlLink);
+      if (event.htmlLink) openUrl(event.htmlLink);
       return;
     }
     const handler = resolveProvider(settings, conf.provider);
@@ -268,17 +296,13 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     }
   }
 
-  private async handleLongPress(
-    ev: KeyDownEvent<CountdownSettings>,
-  ): Promise<void> {
-    const sel = getActiveSelectionForKey(ev.action.id);
-    if (!sel || sel.mode === "idle") return;
-    const attachment = pickAttachment(sel.event);
+  private openNotes(event: CalendarEvent): void {
+    const attachment = pickAttachment(event);
     if (attachment) {
       openUrl(attachment);
       return;
     }
-    if (sel.event.htmlLink) openUrl(sel.event.htmlLink);
+    if (event.htmlLink) openUrl(event.htmlLink);
   }
 
   private runNextMeetingAction(settings: CountdownSettings): void {
@@ -290,7 +314,7 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     }
   }
 
-  private async runAuthFlow(
+  protected async runAuthFlow(
     action: KeyAction<CountdownSettings>,
   ): Promise<void> {
     try {
@@ -361,4 +385,28 @@ export class UpcomingAction extends BaseCountdownAction {
 @action({ UUID: "com.ewels.deckcal.ongoing" })
 export class OngoingAction extends BaseCountdownAction {
   protected readonly selectionMode: SelectionMode = "ongoing";
+}
+
+// Blank tile that only lights up during the meeting-start flash. Every state
+// other than no-accounts (sign in) and flashing (join on long press) is a
+// silent no-op — the user's other DeckCal keys carry the visible interactions.
+@action({ UUID: "com.ewels.deckcal.alert" })
+export class AlertAction extends BaseCountdownAction {
+  protected readonly selectionMode: SelectionMode = "combined";
+  protected override readonly renderVariant: RenderVariant = "alert";
+
+  protected override async handleShortPress(
+    ev: KeyUpEvent<CountdownSettings>,
+  ): Promise<void> {
+    const { state } = await getPressContextForKey(ev.action.id);
+    if (state === "no-accounts") await this.runAuthFlow(ev.action);
+  }
+
+  protected override async handleLongPress(
+    ev: KeyDownEvent<CountdownSettings>,
+  ): Promise<void> {
+    const { state, selection } = await getPressContextForKey(ev.action.id);
+    if (state !== "flashing" || selection?.mode !== "ongoing") return;
+    this.joinMeeting(selection.event, ev.payload.settings);
+  }
 }

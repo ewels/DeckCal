@@ -7,7 +7,11 @@ import {
   listEvents,
 } from "../calendar/client";
 import { type SelectionMode, select } from "../calendar/selection";
-import { buildSvgTile, type RenderState } from "../render/icon";
+import {
+  buildSvgTile,
+  type RenderState,
+  type RenderVariant,
+} from "../render/icon";
 import {
   type CountdownSettings,
   DEFAULTS,
@@ -16,6 +20,7 @@ import {
 } from "../settings";
 import { log } from "../util/log";
 import {
+  acknowledgeEvent,
   loadGlobalSettings,
   pruneAcknowledged,
   updateGlobalSettings,
@@ -43,8 +48,16 @@ type KeyRegistration = {
   action: KeyAction<CountdownSettings>;
   settings: CountdownSettings;
   selectionMode: SelectionMode;
+  renderVariant: RenderVariant;
   lastDataUrl?: string;
 };
+
+export type PressState =
+  | "no-accounts"
+  | "idle"
+  | "upcoming"
+  | "flashing"
+  | "ongoing";
 
 const keys = new Map<string, KeyRegistration>();
 const accounts = new Map<string, AccountState>();
@@ -261,13 +274,20 @@ async function renderAllKeys(): Promise<void> {
   const global = await loadGlobalSettings();
   const acked = new Set(global.acknowledgedEventIds ?? []);
   const now = Date.now();
+
+  await autoAckExpired(acked, now);
+
   // 1Hz pulse synced with the 1s ticker. Faster (500ms) parity would alias
   // because the ticker only samples once per second.
   const flashOn = Math.floor(now / 1000) % 2 === 0;
 
   for (const reg of keys.values()) {
     const state = toRenderState(reg, acked);
-    const dataUrl = buildSvgTile({ state, flashOn });
+    const dataUrl = buildSvgTile({
+      state,
+      flashOn,
+      variant: reg.renderVariant,
+    });
     if (dataUrl === reg.lastDataUrl) continue;
     reg.lastDataUrl = dataUrl;
     try {
@@ -276,6 +296,29 @@ async function renderAllKeys(): Promise<void> {
       log.error(`setImage failed: ${err}`);
     }
   }
+}
+
+async function autoAckExpired(acked: Set<string>, now: number): Promise<void> {
+  const toAdd: string[] = [];
+  for (const reg of keys.values()) {
+    const cutoffMins = optionalNumber(
+      reg.settings.autoAckAfterMinutes,
+      DEFAULTS.autoAckAfterMinutes,
+    );
+    if (cutoffMins === null) continue;
+    const sel = activeSelection(reg);
+    if (!sel || sel.mode !== "ongoing") continue;
+    if (acked.has(sel.event.id)) continue;
+    if (now - sel.event.startMs < cutoffMins * 60_000) continue;
+    toAdd.push(sel.event.id);
+  }
+  if (toAdd.length === 0) return;
+  for (const id of toAdd) acked.add(id);
+  await updateGlobalSettings((g) => {
+    const set = new Set(g.acknowledgedEventIds ?? []);
+    for (const id of toAdd) set.add(id);
+    return { ...g, acknowledgedEventIds: Array.from(set) };
+  });
 }
 
 function startLoops(): void {
@@ -308,8 +351,9 @@ export function registerKey(
   action: KeyAction<CountdownSettings>,
   settings: CountdownSettings,
   selectionMode: SelectionMode = "combined",
+  renderVariant: RenderVariant = "normal",
 ): void {
-  keys.set(action.id, { action, settings, selectionMode });
+  keys.set(action.id, { action, settings, selectionMode, renderVariant });
   startLoops();
   void renderAllKeys();
 }
@@ -366,29 +410,50 @@ function filteredEventsForKey(actionId: string): CalendarEvent[] | null {
 export async function acknowledgeForKey(actionId: string): Promise<void> {
   const reg = keys.get(actionId);
   if (!reg) return;
-  const filtered = filteredEventsForKey(actionId);
-  if (!filtered) return;
-  const result = select(filtered, reg.settings, { mode: reg.selectionMode });
-  if (result.mode !== "ongoing") return;
-  await updateGlobalSettings((g) => {
-    const acked = new Set(g.acknowledgedEventIds ?? []);
-    acked.add(result.event.id);
-    return { ...g, acknowledgedEventIds: Array.from(acked) };
-  });
+  const result = activeSelection(reg);
+  if (!result || result.mode !== "ongoing") return;
+  await acknowledgeEvent(result.event.id);
   reg.lastDataUrl = undefined;
   void renderAllKeys();
 }
 
-// Returns the SelectionResult for the given key (for the action's press
-// handlers — they need to know "what event am I acting on?").
-export function getActiveSelectionForKey(
-  actionId: string,
+function activeSelection(
+  reg: KeyRegistration,
 ): ReturnType<typeof select> | null {
-  const reg = keys.get(actionId);
-  if (!reg) return null;
-  const filtered = filteredEventsForKey(actionId);
+  const filtered = filteredEventsForKey(reg.action.id);
   if (!filtered) return null;
   return select(filtered, reg.settings, { mode: reg.selectionMode });
+}
+
+export type PressContext = {
+  state: PressState;
+  selection: ReturnType<typeof select> | null;
+};
+
+// Press handlers call this once to get both the dispatch state and the
+// selection. "flashing" = ongoing event the user hasn't dismissed yet.
+export async function getPressContextForKey(
+  actionId: string,
+): Promise<PressContext> {
+  const reg = keys.get(actionId);
+  if (!reg) return { state: "idle", selection: null };
+  if ((reg.settings.accounts ?? []).length === 0) {
+    return { state: "no-accounts", selection: null };
+  }
+  const selection = activeSelection(reg);
+  if (!selection || selection.mode === "idle") {
+    return { state: "idle", selection };
+  }
+  if (selection.mode === "upcoming") return { state: "upcoming", selection };
+  const global = await loadGlobalSettings();
+  const acked = new Set(global.acknowledgedEventIds ?? []);
+  const flashBehavior =
+    reg.settings.meetingStartBehavior ?? DEFAULTS.meetingStartBehavior;
+  const state: PressState =
+    flashBehavior === "flash" && !acked.has(selection.event.id)
+      ? "flashing"
+      : "ongoing";
+  return { state, selection };
 }
 
 // Called from the property inspector bridge when a new account signs in or

@@ -36,6 +36,10 @@ export type CountdownSettings = {
   longPressThresholdMs?: number | string;
   imminentFillMinutes?: number | string;
   meetingStartBehavior?: "flash" | "none";
+  // Auto-dismiss the start-of-meeting flash this many minutes after the
+  // meeting starts, if the user hasn't pressed the key. Empty/undefined =
+  // never auto-dismiss.
+  autoAckAfterMinutes?: number | string;
 
   // Action when the displayed event is upcoming (no ongoing meeting).
   nextMeetingActionType?: "url" | "app";
@@ -88,6 +92,7 @@ export const DEFAULTS = {
   longPressThresholdMs: 600,
   imminentFillMinutes: 5,
   meetingStartBehavior: "flash" as const,
+  autoAckAfterMinutes: 5,
   nextMeetingActionUrl: "https://calendar.google.com",
   includeTentative: true,
   includeDeclined: false,

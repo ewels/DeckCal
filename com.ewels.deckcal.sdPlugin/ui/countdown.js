@@ -34,6 +34,8 @@
         "Shows your next upcoming meeting. Ignores any meeting that is already happening.",
       ongoing:
         "Shows the meeting you are currently in. Idle when nothing is happening.",
+      alert:
+        "Blank tile that only lights up the moment a meeting starts. Short press dismisses, long press joins.",
     };
 
     function applyVariantVisibility(variant, showBanner) {
@@ -264,7 +266,8 @@
         if (
           msg.variant === "combined" ||
           msg.variant === "upcoming" ||
-          msg.variant === "ongoing"
+          msg.variant === "ongoing" ||
+          msg.variant === "alert"
         ) {
           applyVariantVisibility(msg.variant, true);
         }

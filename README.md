@@ -38,6 +38,7 @@ event detail page.
 | <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | The ongoing meeting if you're in one, otherwise the next upcoming meeting. The "do everything" action. |
 | <img src="com.ewels.deckcal.sdPlugin/imgs/actions/upcoming/key.svg" alt="" width="56">  | **Upcoming meeting**  | Only the next upcoming meeting. Ignores meetings already in progress.                                  |
 |  <img src="com.ewels.deckcal.sdPlugin/imgs/actions/ongoing/key.svg" alt="" width="56">  | **Ongoing meeting**   | Only the meeting you're currently in. Idle when nothing is happening.                                  |
+|   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | Blank tile that only lights up the moment a meeting starts. Short press dismisses, long press joins.   |
 
 ## Install (end users)
 
@@ -108,8 +109,9 @@ click the gear icon to open settings:
   ones with **Add another account**.
 - **Calendars** — Tick which calendars feed the countdown, grouped per
   account. Primary is auto-selected on first sign-in.
-- **Behavior** — Long-press threshold, imminent-fill window, and what happens
-  when a meeting starts (flash until pressed, or silent transition).
+- **Behavior** — Long-press threshold, imminent-fill window, what happens
+  when a meeting starts (flash until pressed, or silent transition), and how
+  long to flash before auto-dismissing.
 - **Next meeting press** — URL or app to launch when there is no ongoing
   meeting. Defaults to <https://calendar.google.com>.
 - **Join meeting press** — For Google Meet / Zoom / Teams individually,

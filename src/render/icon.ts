@@ -32,10 +32,16 @@ export type RenderState =
   | { mode: "authRequired" }
   | { mode: "noCalendars" };
 
+export type RenderVariant = "normal" | "alert";
+
 export type RenderInput = {
   state: RenderState;
   // Caller controls flash parity so it matches the 1Hz tick clock.
   flashOn?: boolean;
+  // "alert" — the meeting-alert action. Renders blank for every state except
+  // authRequired and flashing-ongoing (the only states this action exists to
+  // surface).
+  variant?: RenderVariant;
 };
 
 const SIZE = 144;
@@ -63,7 +69,10 @@ export function formatRemaining(ms: number): string {
   const secs = Math.max(0, Math.ceil(ms / 1000));
   if (secs <= 0) return "0s";
   if (secs < 60) return `${secs}s`;
-  const mins = Math.floor(secs / 60);
+  // Round minutes up — matches macOS Calendar etc. "2 minutes" stays "2m"
+  // until the meeting is 1m00s away, rather than collapsing to "1m" the
+  // instant we cross 1:59.
+  const mins = Math.ceil(secs / 60);
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
   const remMins = mins % 60;
@@ -268,13 +277,24 @@ function idleGlyph(): string {
   ].join("");
 }
 
+const BLANK_TILE = dataUrl(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" width="${SIZE}" height="${SIZE}"><rect width="${SIZE}" height="${SIZE}" fill="${COLORS.bg}"/></svg>`,
+);
+
 export function buildSvgTile(input: RenderInput): string {
-  const { state, flashOn } = input;
+  const { state, flashOn, variant = "normal" } = input;
 
   if (state.mode === "authRequired") {
     // Static SVG asset — Stream Deck reads files relative to the plugin root.
     // Mirrors the type-deck pattern (one viewBox, one path, simple text).
     return "imgs/states/auth-required.svg";
+  }
+
+  // Alert variant is "blank except when flashing". An ongoing event that
+  // hasn't fired its flash (or has been dismissed) goes blank.
+  if (variant === "alert") {
+    const isFlashing = state.mode === "ongoing" && state.flashing;
+    if (!isFlashing) return BLANK_TILE;
   }
 
   if (state.mode === "noCalendars") {
