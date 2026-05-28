@@ -52,6 +52,17 @@ type KeyRegistration = {
   lastDataUrl?: string;
 };
 
+type BlockInfo = { columns: number; indexInBlock: number };
+
+type BlockSeed = {
+  actionId: string;
+  deviceId: string;
+  row: number;
+  column: number;
+  eventId: string;
+  imminentMs: number;
+};
+
 export type PressState =
   | "no-accounts"
   | "idle"
@@ -187,10 +198,10 @@ async function runPoll(): Promise<void> {
 function toRenderState(
   reg: KeyRegistration,
   acknowledged: Set<string>,
-): RenderState {
+): { state: RenderState; event?: CalendarEvent } {
   const keyAccounts = reg.settings.accounts ?? [];
   if (keyAccounts.length === 0) {
-    return { mode: "authRequired" };
+    return { state: { mode: "authRequired" } };
   }
 
   // Gather events across every account this key uses. If any account is
@@ -199,7 +210,7 @@ function toRenderState(
   const allEvents: CalendarEvent[] = [];
   for (const a of keyAccounts) {
     const acct = accounts.get(a.sub);
-    if (!acct || acct.authRequired) return { mode: "authRequired" };
+    if (!acct || acct.authRequired) return { state: { mode: "authRequired" } };
     allEvents.push(...acct.events);
   }
 
@@ -209,7 +220,7 @@ function toRenderState(
   // primary so they see something while the PI auto-ticks on first open.
   const sels = reg.settings.calendarSelections;
   if (Array.isArray(sels) && sels.length === 0) {
-    return { mode: "noCalendars" };
+    return { state: { mode: "noCalendars" } };
   }
   const selKey = (sub: string, cid: string) => `${sub}::${cid}`;
   const wanted = new Set<string>();
@@ -228,7 +239,7 @@ function toRenderState(
     60_000;
 
   if (result.mode === "idle") {
-    return { mode: "idle", footerBand: result.footerBand };
+    return { state: { mode: "idle", footerBand: result.footerBand } };
   }
   if (result.mode === "upcoming") {
     const dimAfterHours = optionalNumber(reg.settings.dimAfterHours);
@@ -240,17 +251,20 @@ function toRenderState(
       DEFAULTS.dimOpacity,
     );
     return {
-      mode: "upcoming",
-      remainingMs: Math.max(0, result.event.startMs - Date.now()),
-      eventStartMs: result.event.startMs,
-      gapMs: result.gapMs,
-      gapElapsedMs: result.gapElapsedMs,
-      imminentMs,
-      extraCount: result.extraCount,
-      title: result.event.summary,
-      footerBand: result.footerBand,
-      dim,
-      dimOpacity: dimOpacityPct / 100,
+      state: {
+        mode: "upcoming",
+        remainingMs: Math.max(0, result.event.startMs - Date.now()),
+        eventStartMs: result.event.startMs,
+        gapMs: result.gapMs,
+        gapElapsedMs: result.gapElapsedMs,
+        imminentMs,
+        extraCount: result.extraCount,
+        title: result.event.summary,
+        footerBand: result.footerBand,
+        dim,
+        dimOpacity: dimOpacityPct / 100,
+      },
+      event: result.event,
     };
   }
   const flashBehavior =
@@ -258,15 +272,84 @@ function toRenderState(
   const flashing =
     flashBehavior === "flash" && !acknowledged.has(result.event.id);
   return {
-    mode: "ongoing",
-    remainingMs: Math.max(0, result.event.endMs - Date.now()),
-    totalMs: result.totalMs,
-    imminentMs,
-    extraCount: result.extraCount,
-    title: result.event.summary,
-    footerBand: result.footerBand,
-    flashing,
+    state: {
+      mode: "ongoing",
+      remainingMs: Math.max(0, result.event.endMs - Date.now()),
+      totalMs: result.totalMs,
+      imminentMs,
+      extraCount: result.extraCount,
+      title: result.event.summary,
+      footerBand: result.footerBand,
+      flashing,
+    },
+    event: result.event,
   };
+}
+
+// 4-connected component analysis over BlockSeeds. Keys are grouped by
+// (device, event, imminent window) — only keys that already agree on what
+// the bar is showing get joined into a band. Singletons get no entry in the
+// result (default single-tile behaviour). DeckCal actions are Keypad-only
+// per the manifest, so controller doesn't need to participate in grouping.
+function computeBlocks(seeds: BlockSeed[]): Map<string, BlockInfo> {
+  const groups = new Map<
+    string,
+    { actionId: string; row: number; column: number }[]
+  >();
+  for (const s of seeds) {
+    const groupKey = `${s.deviceId}::${s.eventId}::${s.imminentMs}`;
+    const bucket = groups.get(groupKey) ?? [];
+    bucket.push({ actionId: s.actionId, row: s.row, column: s.column });
+    groups.set(groupKey, bucket);
+  }
+
+  const result = new Map<string, BlockInfo>();
+  const deltas: ReadonlyArray<readonly [number, number]> = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ];
+  for (const entries of groups.values()) {
+    if (entries.length < 2) continue;
+    const byPos = new Map<string, (typeof entries)[number]>();
+    for (const e of entries) byPos.set(`${e.row},${e.column}`, e);
+    const visited = new Set<string>();
+    for (const start of entries) {
+      const startKey = `${start.row},${start.column}`;
+      if (visited.has(startKey)) continue;
+      visited.add(startKey);
+      const component: (typeof entries)[number][] = [];
+      const queue: (typeof entries)[number][] = [start];
+      while (queue.length > 0) {
+        const node = queue.shift() as (typeof entries)[number];
+        component.push(node);
+        for (const [dr, dc] of deltas) {
+          const nKey = `${node.row + dr},${node.column + dc}`;
+          if (visited.has(nKey)) continue;
+          const next = byPos.get(nKey);
+          if (!next) continue;
+          visited.add(nKey);
+          queue.push(next);
+        }
+      }
+      if (component.length < 2) continue;
+      let minCol = Number.POSITIVE_INFINITY;
+      let maxCol = Number.NEGATIVE_INFINITY;
+      for (const c of component) {
+        if (c.column < minCol) minCol = c.column;
+        if (c.column > maxCol) maxCol = c.column;
+      }
+      const columns = maxCol - minCol + 1;
+      for (const c of component) {
+        result.set(c.actionId, {
+          columns,
+          indexInBlock: c.column - minCol,
+        });
+      }
+    }
+  }
+  return result;
 }
 
 async function renderAllKeys(): Promise<void> {
@@ -281,10 +364,43 @@ async function renderAllKeys(): Promise<void> {
   // because the ticker only samples once per second.
   const flashOn = Math.floor(now / 1000) % 2 === 0;
 
+  // Two-pass render: compute every key's state, gather block seeds for
+  // anything in the imminent window, then resolve contiguous-block info
+  // before painting so adjacent keys can share one horizontal bar.
+  const computed: { reg: KeyRegistration; state: RenderState }[] = [];
+  const seeds: BlockSeed[] = [];
   for (const reg of keys.values()) {
-    const state = toRenderState(reg, acked);
+    const { state, event } = toRenderState(reg, acked);
+    computed.push({ reg, state });
+    if (
+      state.mode !== "upcoming" ||
+      !event ||
+      state.remainingMs > state.imminentMs
+    ) {
+      continue;
+    }
+    // `action.coordinates` is undefined for sub-actions inside a multi-action
+    // button — those have no grid slot, so they can't be part of a block.
+    const coords = reg.action.coordinates;
+    if (!coords) continue;
+    seeds.push({
+      actionId: reg.action.id,
+      deviceId: reg.action.device.id,
+      row: coords.row,
+      column: coords.column,
+      eventId: event.id,
+      imminentMs: state.imminentMs,
+    });
+  }
+
+  const blocks = seeds.length > 1 ? computeBlocks(seeds) : null;
+
+  for (const { reg, state } of computed) {
+    const block = blocks?.get(reg.action.id);
+    const finalState: RenderState =
+      block && state.mode === "upcoming" ? { ...state, block } : state;
     const dataUrl = buildSvgTile({
-      state,
+      state: finalState,
       flashOn,
       variant: reg.renderVariant,
     });

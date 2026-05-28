@@ -18,6 +18,11 @@ export type RenderState =
       dim?: boolean;
       // 0-1; only consulted when `dim` is true.
       dimOpacity?: number;
+      // When this key is part of a contiguous group of keys showing the same
+      // event with the same imminent window, the bar sweeps across the group
+      // as a single band. Each key paints the slice that falls within its
+      // own column. Absent for stand-alone keys.
+      block?: { columns: number; indexInBlock: number };
     }
   | {
       mode: "ongoing";
@@ -233,18 +238,25 @@ function imminentFill(
   remainingMs: number,
   imminentMs: number,
   color: string,
+  block?: { columns: number; indexInBlock: number },
 ): { svg: string; ratio: number } {
   if (imminentMs <= 0) return { svg: "", ratio: 0 };
-  // Spec: "1px yellow at the start of the 5 mins". At remainingMs == imminentMs
-  // we want exactly 1px visible; outside the window, nothing.
   if (remainingMs > imminentMs) return { svg: "", ratio: 0 };
-  const ratio = Math.max(0, 1 - remainingMs / imminentMs);
-  // Left-to-right fill; clamp to a minimum of 1px so the indicator is
-  // immediately visible the moment the imminent window opens.
-  const fillWidth = Math.max(1, Math.round(ratio * SIZE));
+  const baseRatio = Math.max(0, 1 - remainingMs / imminentMs);
+  const columns = block?.columns ?? 1;
+  const indexInBlock = block?.indexInBlock ?? 0;
+  // Bar spans the whole block; this key paints the slice that falls within
+  // its column. baseRatio*columns is bar width in block-columns; subtracting
+  // indexInBlock translates it into this key's local 0..1 fill.
+  const keyRatio = Math.max(0, Math.min(1, baseRatio * columns - indexInBlock));
+  if (keyRatio <= 0) return { svg: "", ratio: 0 };
+  const rawWidth = Math.round(keyRatio * SIZE);
+  // 1px minimum on the leading edge so the bar is immediately visible the
+  // moment it enters a tile.
+  const fillWidth = keyRatio < 1 ? Math.max(1, rawWidth) : SIZE;
   return {
     svg: `<rect x="0" y="0" width="${fillWidth}" height="${SIZE}" fill="${color}"/>`,
-    ratio,
+    ratio: keyRatio,
   };
 }
 
@@ -290,11 +302,28 @@ export function buildSvgTile(input: RenderInput): string {
     return "imgs/states/auth-required.svg";
   }
 
-  // Alert variant is "blank except when flashing". An ongoing event that
-  // hasn't fired its flash (or has been dismissed) goes blank.
+  // Alert variant is blank except for two surfaces: (a) the imminent yellow
+  // fill bar (no text, no other chrome) during the run-up to a meeting, and
+  // (b) the ongoing-meeting flash. Anything else renders blank.
   if (variant === "alert") {
-    const isFlashing = state.mode === "ongoing" && state.flashing;
-    if (!isFlashing) return BLANK_TILE;
+    if (state.mode === "idle" || state.mode === "noCalendars") {
+      return BLANK_TILE;
+    }
+    if (state.mode === "upcoming") {
+      if (state.remainingMs > state.imminentMs) return BLANK_TILE;
+      const fill = imminentFill(
+        state.remainingMs,
+        state.imminentMs,
+        COLORS.upcomingFill,
+        state.block,
+      );
+      if (!fill.svg) return BLANK_TILE;
+      return dataUrl(wrap(fill.svg));
+    }
+    // ongoing — only the flash renders; everything else stays blank.
+    if (!state.flashing) return BLANK_TILE;
+    // Fall through to the shared ongoing render below, which paints the
+    // yellow flash + NOW label.
   }
 
   if (state.mode === "noCalendars") {
@@ -312,6 +341,7 @@ export function buildSvgTile(input: RenderInput): string {
       state.remainingMs,
       state.imminentMs,
       COLORS.upcomingFill,
+      state.block,
     );
     parts.push(fill.svg);
     const progress = state.gapMs > 0 ? state.gapElapsedMs / state.gapMs : 0;
