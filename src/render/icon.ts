@@ -3,6 +3,13 @@
 
 import type { FooterBand } from "../calendar/selection";
 
+// When a key is part of a contiguous group showing the same meeting, the fill
+// (yellow imminent bar or green ongoing bar) sweeps across the group as a
+// single band: each key paints only the slice within its own column. Absent
+// for stand-alone keys, which fill normally. `columns` is the band width and
+// `indexInBlock` is this key's 0-based position from the band's left edge.
+export type BlockPlacement = { columns: number; indexInBlock: number };
+
 export type RenderState =
   | { mode: "idle"; footerBand: FooterBand }
   | {
@@ -18,11 +25,7 @@ export type RenderState =
       dim?: boolean;
       // 0-1; only consulted when `dim` is true.
       dimOpacity?: number;
-      // When this key is part of a contiguous group of keys showing the same
-      // event with the same imminent window, the bar sweeps across the group
-      // as a single band. Each key paints the slice that falls within its
-      // own column. Absent for stand-alone keys.
-      block?: { columns: number; indexInBlock: number };
+      block?: BlockPlacement;
     }
   | {
       mode: "ongoing";
@@ -33,6 +36,9 @@ export type RenderState =
       title?: string;
       footerBand: FooterBand;
       flashing: boolean;
+      // The flash overlay always covers the whole tile regardless of `block`
+      // — every key in the band flashes together.
+      block?: BlockPlacement;
     }
   | { mode: "authRequired" }
   | { mode: "noCalendars" };
@@ -234,28 +240,48 @@ function topProgressBar(
   return `<rect x="0" y="0" width="${w}" height="${TOP_BAR_HEIGHT}" fill="${color}"/>`;
 }
 
+// Translate a band's overall progress (0..1 across the whole block) into this
+// key's local 0..1 fill. Bar spans the whole block; this key paints the slice
+// that falls within its column. baseRatio*columns is bar width in
+// block-columns; subtracting indexInBlock yields this key's local fill. For a
+// stand-alone key (no block) this is just baseRatio clamped.
+function blockSlice(baseRatio: number, block?: BlockPlacement): number {
+  const columns = block?.columns ?? 1;
+  const indexInBlock = block?.indexInBlock ?? 0;
+  return Math.max(0, Math.min(1, baseRatio * columns - indexInBlock));
+}
+
+// Full-height fill rect for a given local fill ratio, with a 1px minimum on the
+// leading edge so the bar is immediately visible the moment it enters a tile.
+function sliceRect(keyRatio: number, color: string, opacity?: number): string {
+  const width = keyRatio >= 1 ? SIZE : Math.max(1, Math.round(keyRatio * SIZE));
+  const op = opacity !== undefined ? ` opacity="${opacity}"` : "";
+  return `<rect x="0" y="0" width="${width}" height="${SIZE}" fill="${color}"${op}/>`;
+}
+
+// Fraction of an ongoing meeting that has elapsed (0..1). Falls back to fully
+// elapsed for a zero-length meeting.
+function ongoingProgress(state: {
+  totalMs: number;
+  remainingMs: number;
+}): number {
+  return state.totalMs > 0
+    ? (state.totalMs - state.remainingMs) / state.totalMs
+    : 1;
+}
+
 function imminentFill(
   remainingMs: number,
   imminentMs: number,
   color: string,
-  block?: { columns: number; indexInBlock: number },
+  block?: BlockPlacement,
 ): { svg: string; ratio: number } {
   if (imminentMs <= 0) return { svg: "", ratio: 0 };
   if (remainingMs > imminentMs) return { svg: "", ratio: 0 };
-  const baseRatio = Math.max(0, 1 - remainingMs / imminentMs);
-  const columns = block?.columns ?? 1;
-  const indexInBlock = block?.indexInBlock ?? 0;
-  // Bar spans the whole block; this key paints the slice that falls within
-  // its column. baseRatio*columns is bar width in block-columns; subtracting
-  // indexInBlock translates it into this key's local 0..1 fill.
-  const keyRatio = Math.max(0, Math.min(1, baseRatio * columns - indexInBlock));
+  const keyRatio = blockSlice(Math.max(0, 1 - remainingMs / imminentMs), block);
   if (keyRatio <= 0) return { svg: "", ratio: 0 };
-  const rawWidth = Math.round(keyRatio * SIZE);
-  // 1px minimum on the leading edge so the bar is immediately visible the
-  // moment it enters a tile.
-  const fillWidth = keyRatio < 1 ? Math.max(1, rawWidth) : SIZE;
   return {
-    svg: `<rect x="0" y="0" width="${fillWidth}" height="${SIZE}" fill="${color}"/>`,
+    svg: sliceRect(keyRatio, color),
     ratio: keyRatio,
   };
 }
@@ -302,9 +328,11 @@ export function buildSvgTile(input: RenderInput): string {
     return "imgs/states/auth-required.svg";
   }
 
-  // Alert variant is blank except for two surfaces: (a) the imminent yellow
-  // fill bar (no text, no other chrome) during the run-up to a meeting, and
-  // (b) the ongoing-meeting flash. Anything else renders blank.
+  // Alert variant is blank except for three surfaces, all bare fills with no
+  // chrome or text: (a) the imminent yellow slice during the run-up to a
+  // meeting, (b) the green progress slice while a meeting is ongoing, and
+  // (c) the ongoing-meeting flash. Both slices are block-aware so the band
+  // sweeps across adjacent alert keys. Anything else renders blank.
   if (variant === "alert") {
     if (state.mode === "idle" || state.mode === "noCalendars") {
       return BLANK_TILE;
@@ -320,10 +348,15 @@ export function buildSvgTile(input: RenderInput): string {
       if (!fill.svg) return BLANK_TILE;
       return dataUrl(wrap(fill.svg));
     }
-    // ongoing — only the flash renders; everything else stays blank.
-    if (!state.flashing) return BLANK_TILE;
-    // Fall through to the shared ongoing render below, which paints the
-    // yellow flash + NOW label.
+    // ongoing, not flashing — paint just the green slice (matching the bare
+    // yellow slice above) so the in-meeting band spans alert keys too.
+    if (!state.flashing) {
+      const keyRatio = blockSlice(ongoingProgress(state), state.block);
+      if (keyRatio <= 0) return BLANK_TILE;
+      return dataUrl(wrap(sliceRect(keyRatio, COLORS.ongoingFill, 0.5)));
+    }
+    // flashing — fall through to the shared ongoing render below, which paints
+    // the yellow flash + NOW label.
   }
 
   if (state.mode === "noCalendars") {
@@ -373,9 +406,10 @@ export function buildSvgTile(input: RenderInput): string {
     return dataUrl(wrap(parts.join("")));
   }
 
-  // ongoing — full-tile green fill at 50% opacity that grows left→right
-  // with meeting progress. Single-key only (no block sweep across adjacent
-  // keys like the upcoming imminent bar does).
+  // ongoing — full-tile green fill at 50% opacity that grows left→right with
+  // meeting progress. When this key is part of a block (adjacent keys showing
+  // the same ongoing meeting), the fill sweeps across the group as one band
+  // and this key paints just its slice, mirroring the upcoming imminent bar.
   let boundary = 0;
   if (state.flashing && flashOn) {
     // Flash overlay covers the entire tile in yellow → treat the text
@@ -385,15 +419,9 @@ export function buildSvgTile(input: RenderInput): string {
     );
     boundary = SIZE;
   } else {
-    const progress =
-      state.totalMs > 0
-        ? (state.totalMs - state.remainingMs) / state.totalMs
-        : 1;
-    const fillWidth = Math.max(0, Math.min(1, progress)) * SIZE;
-    if (fillWidth > 0) {
-      parts.push(
-        `<rect x="0" y="0" width="${fillWidth}" height="${SIZE}" fill="${COLORS.ongoingFill}" opacity="0.5"/>`,
-      );
+    const keyRatio = blockSlice(ongoingProgress(state), state.block);
+    if (keyRatio > 0) {
+      parts.push(sliceRect(keyRatio, COLORS.ongoingFill, 0.5));
     }
   }
   // While the meeting-start flash is unacknowledged, replace the countdown

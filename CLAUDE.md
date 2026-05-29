@@ -11,7 +11,7 @@ A Stream Deck plugin (`com.ewels.deckcal`, "DeckCal") that turns a key into a li
 - `com.ewels.deckcal.ongoing` — "Ongoing meeting": current meeting only; idle otherwise.
 - `com.ewels.deckcal.alert` — "Meeting alert": blank tile that lights up only during the meeting-start flash.
 
-The visible keys auto-update every second from a 60-second Google Calendar poll, with progress bars, a yellow imminent-fill in the last 5 minutes (sweeping across adjacent keys as one band when they resolve to the same meeting), a full-tile 50%-opacity green fill while a meeting is ongoing, a yellow flash on meeting start (auto-dismissed after `autoAckAfterMinutes`, default 5), and a footer band for OOO / focus overlaps.
+The visible keys auto-update every second from a 60-second Google Calendar poll, with progress bars, a yellow imminent-fill in the last 5 minutes, a full-tile 50%-opacity green fill while a meeting is ongoing (both sweeping across adjacent keys as one band when they resolve to the same meeting), a yellow flash on meeting start (auto-dismissed after `autoAckAfterMinutes`, default 5), and a footer band for OOO / focus overlaps.
 
 ## Commands
 
@@ -161,10 +161,10 @@ Long press:
 
 - `idle` — calendar glyph (today's date) + optional footer band.
 - `upcoming` — blue top progress bar (gap elapsed / gap total), yellow imminent fill in the last N minutes (single rectangle spanning the imminent window), center countdown, +N footer, band. The runtime can pass a `block: { columns, indexInBlock }` so that when adjacent keys resolve to the same upcoming meeting with the same imminent window, the yellow fill is computed as one band stretching across all of them and each key paints just its slice.
-- `ongoing` — full-tile 50%-opacity green fill that grows left→right with meeting elapsed / total, optional yellow flash overlay driven by `flashOn` parity, center countdown ("NOW" while flashing), +N footer, band. Single-key only; no block sweep.
+- `ongoing` — full-tile 50%-opacity green fill that grows left→right with meeting elapsed / total, optional yellow flash overlay driven by `flashOn` parity, center countdown ("NOW" while flashing), +N footer, band. Like `upcoming`, the runtime can pass a `block: { columns, indexInBlock }` so that when adjacent keys resolve to the same ongoing meeting, the green fill is computed as one band stretching across all of them and each key paints just its slice. The flash overlay always covers the whole tile per key (every key in the band flashes together).
 - `authRequired` / `noCalendars` — static SVG assets returned directly.
 
-`variant: "alert"` (used by `AlertAction`) suppresses everything except the surfaces that justify the alert tile's existence: the upcoming imminent yellow slice (no chrome, no text) and the ongoing meeting-start yellow flash. Every other state renders blank.
+`variant: "alert"` (used by `AlertAction`) suppresses everything except the surfaces that justify the alert tile's existence: the upcoming imminent yellow slice, the ongoing green progress slice (both bare fills, no chrome or text, and both block-aware so the band sweeps across adjacent alert keys), and the ongoing meeting-start yellow flash. Every other state renders blank.
 
 Text color:
 

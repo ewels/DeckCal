@@ -8,6 +8,7 @@ import {
 } from "../calendar/client";
 import { type SelectionMode, select } from "../calendar/selection";
 import {
+  type BlockPlacement,
   buildSvgTile,
   type RenderState,
   type RenderVariant,
@@ -52,7 +53,9 @@ type KeyRegistration = {
   lastDataUrl?: string;
 };
 
-type BlockInfo = { columns: number; indexInBlock: number };
+// Only these two render modes form bands; the literal also distinguishes the
+// two band kinds in the grouping key so they never join.
+type BandMode = "upcoming" | "ongoing";
 
 type BlockSeed = {
   actionId: string;
@@ -60,6 +63,10 @@ type BlockSeed = {
   row: number;
   column: number;
   eventId: string;
+  // "upcoming" bands group by imminent window too (keys with different
+  // imminent settings shouldn't merge); "ongoing" bands group on the event
+  // alone.
+  mode: BandMode;
   imminentMs: number;
 };
 
@@ -287,23 +294,26 @@ function toRenderState(
 }
 
 // 4-connected component analysis over BlockSeeds. Keys are grouped by
-// (device, event, imminent window) — only keys that already agree on what
-// the bar is showing get joined into a band. Singletons get no entry in the
-// result (default single-tile behaviour). DeckCal actions are Keypad-only
+// (device, mode, event[, imminent window]) — only keys that already agree on
+// what the bar is showing get joined into a band. Singletons get no entry in
+// the result (default single-tile behaviour). DeckCal actions are Keypad-only
 // per the manifest, so controller doesn't need to participate in grouping.
-function computeBlocks(seeds: BlockSeed[]): Map<string, BlockInfo> {
+function computeBlocks(seeds: BlockSeed[]): Map<string, BlockPlacement> {
   const groups = new Map<
     string,
     { actionId: string; row: number; column: number }[]
   >();
   for (const s of seeds) {
-    const groupKey = `${s.deviceId}::${s.eventId}::${s.imminentMs}`;
+    const groupKey =
+      s.mode === "ongoing"
+        ? `${s.deviceId}::ongoing::${s.eventId}`
+        : `${s.deviceId}::upcoming::${s.eventId}::${s.imminentMs}`;
     const bucket = groups.get(groupKey) ?? [];
     bucket.push({ actionId: s.actionId, row: s.row, column: s.column });
     groups.set(groupKey, bucket);
   }
 
-  const result = new Map<string, BlockInfo>();
+  const result = new Map<string, BlockPlacement>();
   const deltas: ReadonlyArray<readonly [number, number]> = [
     [-1, 0],
     [1, 0],
@@ -364,21 +374,22 @@ async function renderAllKeys(): Promise<void> {
   // because the ticker only samples once per second.
   const flashOn = Math.floor(now / 1000) % 2 === 0;
 
-  // Two-pass render: compute every key's state, gather block seeds for
-  // anything in the imminent window, then resolve contiguous-block info
-  // before painting so adjacent keys can share one horizontal bar.
+  // Two-pass render: compute every key's state, gather block seeds for any
+  // key showing an in-window upcoming meeting or an ongoing meeting, then
+  // resolve contiguous-block info before painting so adjacent keys showing
+  // the same meeting can share one horizontal bar.
   const computed: { reg: KeyRegistration; state: RenderState }[] = [];
   const seeds: BlockSeed[] = [];
   for (const reg of keys.values()) {
     const { state, event } = toRenderState(reg, acked);
     computed.push({ reg, state });
-    if (
-      state.mode !== "upcoming" ||
-      !event ||
-      state.remainingMs > state.imminentMs
-    ) {
-      continue;
-    }
+    if (!event) continue;
+    // Aliased discriminant checks (not a helper) so TS narrows `state` to the
+    // band-bearing variants for the `state.imminentMs` read below.
+    const inUpcomingBand =
+      state.mode === "upcoming" && state.remainingMs <= state.imminentMs;
+    const inOngoingBand = state.mode === "ongoing";
+    if (!inUpcomingBand && !inOngoingBand) continue;
     // `action.coordinates` is undefined for sub-actions inside a multi-action
     // button — those have no grid slot, so they can't be part of a block.
     const coords = reg.action.coordinates;
@@ -389,6 +400,7 @@ async function renderAllKeys(): Promise<void> {
       row: coords.row,
       column: coords.column,
       eventId: event.id,
+      mode: inOngoingBand ? "ongoing" : "upcoming",
       imminentMs: state.imminentMs,
     });
   }
@@ -398,7 +410,9 @@ async function renderAllKeys(): Promise<void> {
   for (const { reg, state } of computed) {
     const block = blocks?.get(reg.action.id);
     const finalState: RenderState =
-      block && state.mode === "upcoming" ? { ...state, block } : state;
+      block && (state.mode === "upcoming" || state.mode === "ongoing")
+        ? { ...state, block }
+        : state;
     const dataUrl = buildSvgTile({
       state: finalState,
       flashOn,
