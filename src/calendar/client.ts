@@ -2,6 +2,15 @@ import type { OAuth2Client } from "google-auth-library";
 import { type calendar_v3, google } from "googleapis";
 import { log } from "../util/log";
 
+// Per-request timeout for Google API calls. Without this, a request that
+// stalls (e.g. a stale keep-alive socket after the machine wakes from sleep)
+// hangs the await forever: the poll never returns, failureCount never
+// increments, and auth-required is never surfaced. A timeout lets a wedged
+// request fail so the poller can back off and retry on a fresh connection.
+// Kept well under the 60s poll interval, with headroom for listEvents
+// iterating a handful of calendars sequentially.
+const REQUEST_TIMEOUT_MS = 15_000;
+
 export type CalendarSummary = {
   id: string;
   summary: string;
@@ -69,7 +78,10 @@ export async function listCalendars(
 ): Promise<CalendarSummary[]> {
   const calendar = google.calendar({ version: "v3", auth });
   try {
-    const res = await calendar.calendarList.list({ minAccessRole: "reader" });
+    const res = await calendar.calendarList.list(
+      { minAccessRole: "reader" },
+      { timeout: REQUEST_TIMEOUT_MS },
+    );
     const items = res.data.items ?? [];
     return items
       .filter((c): c is calendar_v3.Schema$CalendarListEntry & { id: string } =>
@@ -176,14 +188,17 @@ export async function listEvents(
   const merged = new Map<string, CalendarEvent>();
   for (const calendarId of calendarIds) {
     try {
-      const res = await calendar.events.list({
-        calendarId,
-        timeMin,
-        timeMax,
-        singleEvents: true,
-        orderBy: "startTime",
-        maxResults: 25,
-      });
+      const res = await calendar.events.list(
+        {
+          calendarId,
+          timeMin,
+          timeMax,
+          singleEvents: true,
+          orderBy: "startTime",
+          maxResults: 25,
+        },
+        { timeout: REQUEST_TIMEOUT_MS },
+      );
       for (const raw of res.data.items ?? []) {
         const ev = normalize(raw, accountSub, calendarId, userEmail);
         if (!ev) continue;

@@ -173,6 +173,12 @@ async function pollAccount(state: AccountState): Promise<void> {
       state.authRequired = true;
       state.failureCount = 1;
       log.warn(`Auth required for ${state.email}`);
+      // Drop the cached client so the next poll rebuilds it from stored
+      // settings on a fresh connection. A client whose token state has
+      // wedged (e.g. after the machine sleeps for days) can't otherwise
+      // recover without a full plugin restart. toRenderState treats a
+      // missing account as auth-required, so the tiles still flag it.
+      accounts.delete(state.sub);
       return;
     }
     state.failureCount = Math.min(
