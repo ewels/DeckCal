@@ -172,6 +172,23 @@ export function migrateSettings(s: CountdownSettings): {
   return { next, changed };
 }
 
+// Return a copy of `settings` with accounts (and the calendar selections that
+// reference them) reduced to those whose sub satisfies `keep`. Shared by
+// sign-out (drop one or all accounts) and the on-appear self-heal (drop
+// accounts that no longer exist globally).
+export function retainAccounts(
+  settings: CountdownSettings,
+  keep: (sub: string) => boolean,
+): CountdownSettings {
+  return {
+    ...settings,
+    accounts: (settings.accounts ?? []).filter((a) => keep(a.sub)),
+    calendarSelections: (settings.calendarSelections ?? []).filter((s) =>
+      keep(s.accountSub),
+    ),
+  };
+}
+
 export function resolveProvider(
   settings: CountdownSettings,
   provider: "meet" | "zoom" | "teams",

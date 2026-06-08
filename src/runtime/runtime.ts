@@ -17,6 +17,7 @@ import {
   type CountdownSettings,
   DEFAULTS,
   optionalNumber,
+  retainAccounts,
   toNumber,
 } from "../settings";
 import { log } from "../util/log";
@@ -602,6 +603,36 @@ export function forceRefresh(): void {
 // Drop a cached client (called on sign-out so we re-read settings next time).
 export function dropAccount(sub: string): void {
   accounts.delete(sub);
+}
+
+// Remove an account (or, with sub === null, every account) from the persisted
+// settings of every registered key, so signing out from one tile keeps the
+// rest in sync instead of leaving them flagged auth-required while still
+// listing the removed account. Returns the subs that were removed from at
+// least one key, so the caller can tear down the matching global token and
+// cached client.
+export async function removeAccountFromKeys(
+  sub: string | null,
+): Promise<string[]> {
+  const keep = sub === null ? () => false : (s: string) => s !== sub;
+  const removed = new Set<string>();
+  for (const reg of keys.values()) {
+    const current = reg.settings.accounts ?? [];
+    const next = retainAccounts(reg.settings, keep);
+    if ((next.accounts?.length ?? 0) === current.length) continue; // unaffected
+    for (const a of current) {
+      if (!keep(a.sub)) removed.add(a.sub);
+    }
+    reg.settings = next;
+    reg.lastDataUrl = undefined;
+    try {
+      await reg.action.setSettings(next);
+    } catch (err) {
+      log.error(`Failed to sync key settings on sign-out: ${err}`);
+    }
+  }
+  void renderAllKeys();
+  return Array.from(removed);
 }
 
 export async function listKnownCalendars(

@@ -29,6 +29,7 @@ import {
   getPressContextForKey,
   listKnownCalendars,
   registerKey,
+  removeAccountFromKeys,
   unregisterKey,
   updateKeySettings,
 } from "../runtime/runtime";
@@ -39,6 +40,7 @@ import {
   migrateSettings,
   resolveNextMeeting,
   resolveProvider,
+  retainAccounts,
   toNumber,
 } from "../settings";
 import { openInApp, openUrl } from "../util/launch";
@@ -83,10 +85,22 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     const migration = migrateSettings(ev.payload.settings);
     let settings = migration.next;
 
+    const global = await loadGlobalSettings();
+    const known = new Set(Object.keys(global.accounts ?? {}));
+
+    // Self-heal: drop any accounts signed out from another tile while this key
+    // wasn't visible, so it doesn't show a permanent sign-in icon for an
+    // account that no longer exists globally.
+    const before = settings.accounts ?? [];
+    if (before.some((a) => !known.has(a.sub))) {
+      settings = retainAccounts(settings, (sub) => known.has(sub));
+    }
+
     // A freshly-dropped key with no accounts: adopt every account already
-    // signed in globally, so the user doesn't have to re-auth.
-    if (!settings.accounts || settings.accounts.length === 0) {
-      const global = await loadGlobalSettings();
+    // signed in globally, so the user doesn't have to re-auth. Only when the
+    // key was originally empty, not when pruning just emptied it, so a key
+    // tied to a since-removed account doesn't silently adopt a different one.
+    if (before.length === 0) {
       const stored = Object.entries(global.accounts ?? {});
       if (stored.length > 0) {
         settings = {
@@ -163,26 +177,16 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
 
     if (msg.kind === "signOut") {
       if (!ev.action.isKey()) return;
-      const current = await ev.action.getSettings();
-      const targetSub = msg.sub;
-      // Targeted sign-out (by sub) removes just that account; legacy
-      // signOut with no sub removes all (preserves backwards compatibility
-      // with older PI builds during dev).
-      const remainingAccounts = targetSub
-        ? (current.accounts ?? []).filter((a) => a.sub !== targetSub)
-        : [];
-      const remainingSelections = (current.calendarSelections ?? []).filter(
-        (s) => !targetSub || s.accountSub !== targetSub,
-      );
-      await ev.action.setSettings({
-        ...current,
-        accounts: remainingAccounts,
-        calendarSelections: remainingSelections,
-      });
-      const subsToRemove = targetSub
-        ? [targetSub]
-        : (current.accounts ?? []).map((a) => a.sub);
-      for (const sub of subsToRemove) {
+      // Sign-out is global to the account: remove it from every key, not just
+      // this one, so all tiles stay in sync instead of flipping to the
+      // sign-in icon while still listing the removed account. Targeted
+      // sign-out (by sub) removes just that account; legacy signOut with no
+      // sub removes all (backwards compatibility with older PI builds).
+      const removedSubs = new Set(await removeAccountFromKeys(msg.sub ?? null));
+      // The current key always carries the target sub, but guard against the
+      // edge where it wasn't matched so the global token still gets cleaned.
+      if (msg.sub) removedSubs.add(msg.sub);
+      for (const sub of removedSubs) {
         await removeAccount(sub);
         dropAccount(sub);
       }
