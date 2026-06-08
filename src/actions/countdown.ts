@@ -22,6 +22,7 @@ import { detectConference, pickAttachment } from "../calendar/conferencing";
 import type { SelectionMode } from "../calendar/selection";
 import type { RenderVariant } from "../render/icon";
 import {
+  accountNeedsAuth,
   acknowledgeForKey,
   dropAccount,
   forceRefresh,
@@ -45,7 +46,7 @@ import { log } from "../util/log";
 
 type CalendarsByAccount = Record<
   string,
-  { email: string; items: CalendarSummary[] }
+  { email: string; items: CalendarSummary[]; authRequired: boolean }
 >;
 
 type IncomingMessage =
@@ -211,7 +212,9 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     const entries = await Promise.all(
       accounts.map(async (acct) => {
         const items = await listKnownCalendars(acct.sub);
-        return [acct.sub, { email: acct.email, items }] as const;
+        // Read auth state after the list attempt — listKnownCalendars sets it.
+        const authRequired = accountNeedsAuth(acct.sub);
+        return [acct.sub, { email: acct.email, items, authRequired }] as const;
       }),
     );
     return Object.fromEntries(entries);

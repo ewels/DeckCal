@@ -27,6 +27,11 @@
       variantBanner: document.getElementById("variantBanner"),
     };
 
+    // Per-account auth state (sub -> true when the token has expired/been
+    // revoked), learned from the plugin's `calendars` message. Drives whether
+    // a "Reconnect" button is shown for each account.
+    const authBySub = {};
+
     const VARIANT_BANNERS = {
       combined:
         "Shows your current meeting if you're in one, otherwise the next one. (Sign in once, you can use the same accounts in any other DeckCal action.)",
@@ -72,18 +77,23 @@
         const email = document.createElement("span");
         email.className = "email";
         email.textContent = acct.email;
+        row.appendChild(email);
         // Reconnect re-runs the OAuth flow for this account. Signing in with
         // the same Google account refreshes its tokens in place (the plugin
-        // dedupes by `sub`), so this is the fix when a session has expired,
-        // not just a way to add a new account.
-        const reconnectBtn = document.createElement("button");
-        reconnectBtn.type = "button";
-        reconnectBtn.className = "btn btn-primary";
-        reconnectBtn.textContent = "Reconnect";
-        reconnectBtn.addEventListener("click", () => {
-          showAuthError("Opening browser...");
-          void client.send("sendToPlugin", { kind: "startAuth" });
-        });
+        // dedupes by `sub`). Only shown when this account's session has
+        // expired — a healthy account needs no reconnect.
+        if (authBySub[acct.sub]) {
+          email.textContent = `${acct.email} (session expired)`;
+          const reconnectBtn = document.createElement("button");
+          reconnectBtn.type = "button";
+          reconnectBtn.className = "btn btn-primary";
+          reconnectBtn.textContent = "Reconnect";
+          reconnectBtn.addEventListener("click", () => {
+            showAuthError("Opening browser...");
+            void client.send("sendToPlugin", { kind: "startAuth" });
+          });
+          row.appendChild(reconnectBtn);
+        }
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "btn";
@@ -94,8 +104,6 @@
             sub: acct.sub,
           });
         });
-        row.appendChild(email);
-        row.appendChild(reconnectBtn);
         row.appendChild(btn);
         list.appendChild(row);
       }
@@ -265,7 +273,14 @@
         return;
       }
       if (msg.kind === "calendars") {
+        // Record per-account auth state, then repaint the accounts list so
+        // expired sessions surface a Reconnect button.
+        for (const key of Object.keys(authBySub)) delete authBySub[key];
+        for (const [sub, info] of Object.entries(msg.byAccount || {})) {
+          authBySub[sub] = Boolean(info.authRequired);
+        }
         void readSettings().then((settings) => {
+          renderAccounts(settings.accounts);
           renderCalendars(msg.byAccount, settings.calendarSelections);
         });
         return;

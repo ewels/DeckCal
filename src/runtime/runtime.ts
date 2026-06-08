@@ -612,7 +612,9 @@ export async function listKnownCalendars(
   // Lazy import to avoid pulling Calendar list code into ticker hot path.
   const { listCalendars } = await import("../calendar/client");
   try {
-    return await listCalendars(state.client);
+    const cals = await listCalendars(state.client);
+    state.authRequired = false;
+    return cals;
   } catch (err) {
     if (err instanceof AuthRequiredError) {
       state.authRequired = true;
@@ -620,4 +622,10 @@ export async function listKnownCalendars(
     log.error(`listCalendars failed: ${err}`);
     return [];
   }
+}
+
+// Whether the most recent Calendar call for this account failed auth (token
+// expired / revoked). Drives the PI's per-account "Reconnect" affordance.
+export function accountNeedsAuth(sub: string): boolean {
+  return accounts.get(sub)?.authRequired ?? false;
 }
