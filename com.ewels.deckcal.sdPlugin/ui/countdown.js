@@ -72,6 +72,18 @@
         const email = document.createElement("span");
         email.className = "email";
         email.textContent = acct.email;
+        // Reconnect re-runs the OAuth flow for this account. Signing in with
+        // the same Google account refreshes its tokens in place (the plugin
+        // dedupes by `sub`), so this is the fix when a session has expired,
+        // not just a way to add a new account.
+        const reconnectBtn = document.createElement("button");
+        reconnectBtn.type = "button";
+        reconnectBtn.className = "btn btn-primary";
+        reconnectBtn.textContent = "Reconnect";
+        reconnectBtn.addEventListener("click", () => {
+          showAuthError("Opening browser...");
+          void client.send("sendToPlugin", { kind: "startAuth" });
+        });
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "btn";
@@ -83,6 +95,7 @@
           });
         });
         row.appendChild(email);
+        row.appendChild(reconnectBtn);
         row.appendChild(btn);
         list.appendChild(row);
       }
