@@ -14,6 +14,7 @@ import {
   type RenderVariant,
 } from "../render/icon";
 import {
+  type Account,
   type CountdownSettings,
   DEFAULTS,
   optionalNumber,
@@ -633,6 +634,43 @@ export async function removeAccountFromKeys(
   }
   void renderAllKeys();
   return Array.from(removed);
+}
+
+// Attach a freshly signed-in account to the persisted settings of every
+// registered key, so signing in from one tile keeps the rest in sync instead
+// of leaving them without the new account. The mirror of removeAccountFromKeys.
+//
+// A key with explicit calendar selections won't show the new account until one
+// of its calendars is selected, so we seed its primary (resolved by the
+// caller). Keys with no selections already default to every account's primary,
+// and keys whose selections were deliberately cleared (empty array) are left
+// showing nothing.
+export async function addAccountToKeys(
+  account: Account,
+  primaryCalendarId: string | null,
+): Promise<void> {
+  for (const reg of keys.values()) {
+    const current = reg.settings.accounts ?? [];
+    if (current.some((a) => a.sub === account.sub)) continue; // already attached
+    const sels = reg.settings.calendarSelections;
+    const seedPrimary =
+      primaryCalendarId && Array.isArray(sels) && sels.length > 0;
+    const next: CountdownSettings = {
+      ...reg.settings,
+      accounts: [...current, account],
+      calendarSelections: seedPrimary
+        ? [...sels, { accountSub: account.sub, calendarId: primaryCalendarId }]
+        : sels,
+    };
+    reg.settings = next;
+    reg.lastDataUrl = undefined;
+    try {
+      await reg.action.setSettings(next);
+    } catch (err) {
+      log.error(`Failed to sync key settings on sign-in: ${err}`);
+    }
+  }
+  void renderAllKeys();
 }
 
 export async function listKnownCalendars(

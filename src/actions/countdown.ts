@@ -24,6 +24,7 @@ import type { RenderVariant } from "../render/icon";
 import {
   accountNeedsAuth,
   acknowledgeForKey,
+  addAccountToKeys,
   dropAccount,
   forceRefresh,
   getPressContextForKey,
@@ -327,27 +328,30 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     try {
       const info = await authorize();
       await saveAccount(info);
+      const account: Account = { sub: info.sub, email: info.email };
+      // Resolve the new account's primary calendar so keys that already carry
+      // explicit calendar selections can seed it; without that the account is
+      // attached but contributes no events.
+      const cals = await listKnownCalendars(info.sub);
+      const primaryId = cals.find((c) => c.primary)?.id ?? null;
+      // Sign-in is global to the account: attach it to every registered key,
+      // not just this one, so all tiles pick up the new account and stay in
+      // sync (the mirror of the global sign-out path).
+      await addAccountToKeys(account, primaryId);
+      // Rebuild the PI calendar list from this key's freshly-synced accounts;
+      // guard against getSettings lagging the in-memory sync above.
       const current = await action.getSettings();
-      // Add to (or replace within) the existing accounts array — multiple
-      // accounts supported per key.
-      const existing = (current.accounts ?? []).filter(
-        (a) => a.sub !== info.sub,
-      );
-      const nextAccounts: Account[] = [
-        ...existing,
-        { sub: info.sub, email: info.email },
-      ];
-      await action.setSettings({
-        ...current,
-        accounts: nextAccounts,
-      });
+      const synced = current.accounts ?? [];
+      const nextAccounts: Account[] = synced.some((a) => a.sub === info.sub)
+        ? synced
+        : [...synced, account];
       forceRefresh();
       // Tell the PI which account just signed in, then push the full
       // (multi-account) calendar list. No-op if the PI isn't open.
       await streamDeck.ui.sendToPropertyInspector({
         kind: "authResult",
         ok: true,
-        account: { sub: info.sub, email: info.email },
+        account,
       } as unknown as JsonValue);
       const byAccount = await this.buildCalendarsByAccount(nextAccounts);
       await streamDeck.ui.sendToPropertyInspector({
