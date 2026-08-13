@@ -132,13 +132,22 @@ prek run --all-files      # run hooks across the repo
 
 Version lives in `com.ewels.deckcal.sdPlugin/manifest.json` as a four-part `X.Y.Z.0` string (Elgato's format — the trailing `.0` stays zero). `package.json` is `private: true` with no `version` field, so the manifest is the only place to bump.
 
+`CHANGELOG.md` tracks the same version without the trailing `.0`. The top
+heading carries an `(unreleased)` marker while work accumulates; releasing
+swaps that for the date. Both move in the same commit as the manifest bump, so
+the tree never claims a version the changelog has not described.
+
 ```sh
-# 1. Bump manifest "Version" to "X.Y.Z.0" on a clean tree, then push.
-git commit -m "Bump version to X.Y.Z" com.ewels.deckcal.sdPlugin/manifest.json
+# 1. Bump manifest "Version" to "X.Y.Z.0", swap the CHANGELOG's
+#    "(unreleased)" for today's date, then push, on a clean tree.
+git commit -m "Bump version to X.Y.Z" com.ewels.deckcal.sdPlugin/manifest.json CHANGELOG.md
 git push origin main
-# 2. Create the release.
+# 2. Create the release, reusing the changelog entry as the notes.
 gh release create vX.Y.Z --title "vX.Y.Z — <headline>" --notes "..."
 ```
+
+After releasing, open a fresh `## vX.Y.Z+1 (unreleased)` heading at the top of
+the changelog as changes land, rather than reconstructing it at release time.
 
 Packaging runs on GitHub Actions (`.github/workflows/release.yml`) on `release: published`. The workflow runs `npm ci`, then `npm run build` with `DECKCAL_GOOGLE_CLIENT_ID` / `DECKCAL_GOOGLE_CLIENT_SECRET` from repo secrets, stages a tiny `package.json` inside `com.ewels.deckcal.sdPlugin/` so `@googleapis/calendar` + `google-auth-library` (and their transitive `googleapis-common` + `gaxios` + `gtoken`) are installed alongside `bin/plugin.js`, runs `streamdeck pack`, and `gh release upload`s the resulting `com.ewels.deckcal.streamDeckPlugin` to the release.
 

@@ -55,6 +55,8 @@ Download the latest `com.ewels.deckcal.streamDeckPlugin` from the
 install in Stream Deck, drag **Meeting countdown** onto a key, click the
 gear icon, and **Sign in with Google**.
 
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+
 No Google Cloud setup required. The OAuth client is bundled into the release
 binary. The plugin authenticates against Google with a loopback PKCE flow
 (RFC 8252) — credentials never leave your machine.
