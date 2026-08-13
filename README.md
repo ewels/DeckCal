@@ -52,25 +52,23 @@ event detail page.
 |  <img src="com.ewels.deckcal.sdPlugin/imgs/actions/ongoing/key.svg" alt="" width="56">  | **Ongoing meeting**   | Only the meeting you're currently in. Idle when nothing is happening.                                  |
 |   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | Blank tile that only lights up the moment a meeting starts. Short press dismisses, long press joins.   |
 
-## Install (end users)
+## Installation
+
+> [!WARNING]
+>
+> **DeckCal is waiting on Google's OAuth verification review.** Until that
+> clears, Google only lets people on the app's test-user allowlist sign in,
+> so the plugin cannot be installed and used yet.
+>
+> If you would like to try it in the meantime, see the "Building from source"
+> instructions and provide your own Google API keys.
 
 Download the latest `com.ewels.deckcal.streamDeckPlugin` from the
 [releases page](https://github.com/ewels/deckcal/releases), double-click to
 install in Stream Deck, drag **Meeting countdown** onto a key, click the
 gear icon, and **Sign in with Google**.
 
-See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
-
-No Google Cloud setup required. The OAuth client is bundled into the release
-binary. The plugin authenticates against Google with a loopback PKCE flow
-(RFC 8252) — credentials never leave your machine.
-
-> While the OAuth app is in Google's **Testing** status, sign-in is
-> restricted to test users on the app's allowlist. Open an issue if you
-> want to be added. Long term, the app will go through Google verification
-> so anyone can sign in.
-
-## Building from source (developers)
+## Building from source
 
 ```sh
 npm install
@@ -96,12 +94,7 @@ One-time setup (~5 min):
 `.env.local` is gitignored. The repo never contains real credentials.
 Release CI passes them as environment variables to the build step.
 
-A Desktop OAuth `client_secret` bundled in a binary is not a real secret —
-RFC 8252 explicitly treats it as a public client. The actual security comes
-from PKCE, regenerated per sign-in. Google still requires the value to be
-sent in the token exchange request body.
-
-## Build
+### Build steps
 
 ```sh
 npm install
@@ -143,23 +136,23 @@ tail -f com.ewels.deckcal.sdPlugin/logs/com.ewels.deckcal.0.log
 In the Stream Deck app, drag the "Meeting countdown" action onto a key, then
 click the gear icon to open settings:
 
-- **Accounts** — Sign in with one or more Google accounts. Add additional
+- **Accounts**: Sign in with one or more Google accounts. Add additional
   ones with **Add another account**.
-- **Calendars** — Tick which calendars feed the countdown, grouped per
+- **Calendars** :Tick which calendars feed the countdown, grouped per
   account. Primary is auto-selected on first sign-in.
-- **Behavior** — Long-press threshold, imminent-fill window, what happens
+- **Behavior**: Long-press threshold, imminent-fill window, what happens
   when a meeting starts (flash until pressed, or silent transition), and how
   long to flash before auto-dismissing.
-- **Next meeting press** — URL or app to launch when there is no ongoing
+- **Next meeting press**: URL or app to launch when there is no ongoing
   meeting. Defaults to <https://calendar.google.com>.
-- **Join meeting press** — For Google Meet / Zoom / Teams individually,
+- **Join meeting press**: For Google Meet / Zoom / Teams individually,
   choose URL or app. On macOS the app field is passed to `open -a`; on
   Windows it goes to `start ""`.
-- **Filters** — Include all-day / tentative / declined events; horizon
+- **Filters**: Include all-day / tentative / declined events; horizon
   beyond which to drop or dim distant future events.
-- **Special events** — How to handle out-of-office and focus-time events:
+- **Special events**: How to handle out-of-office and focus-time events:
   footer band only (default), ignore completely, or treat as a normal event.
 
 ## License
 
-MIT.
+Open source: MIT.
