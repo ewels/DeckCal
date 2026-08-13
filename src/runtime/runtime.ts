@@ -45,6 +45,11 @@ type AccountState = {
   // 0 = healthy, >=1 = consecutive errors (drives backoff)
   failureCount: number;
   authRequired: boolean;
+  // Event count at the last poll that got logged. A successful poll happens
+  // every 60s per account, which is far too often to log unconditionally, so
+  // pollAccount only logs when this changes. undefined until the first poll,
+  // so that one always logs.
+  lastLoggedEventCount?: number;
 };
 
 type KeyRegistration = {
@@ -166,11 +171,18 @@ async function pollAccount(state: AccountState): Promise<void> {
       POLL_WINDOW_MS,
       state.email,
     );
+    const recovered = state.failureCount > 0 || state.authRequired;
     state.events = events;
     state.lastPoll = now;
     state.failureCount = 0;
     state.authRequired = false;
-    log.debug(`Polled ${state.email}: ${events.length} events`);
+    // Log the first poll, any change in what we can see, and any recovery from
+    // an error state. Steady-state polling stays silent so the log file isn't
+    // 1440 identical lines per account per day.
+    if (recovered || events.length !== state.lastLoggedEventCount) {
+      state.lastLoggedEventCount = events.length;
+      log.info(`Polled ${state.email}: ${events.length} events`);
+    }
   } catch (err) {
     state.lastPoll = now;
     if (err instanceof AuthRequiredError) {

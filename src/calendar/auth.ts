@@ -283,7 +283,9 @@ export function getAuthorizedClient(
       scope: next.scope ?? undefined,
       token_type: next.token_type ?? undefined,
     };
-    log.debug(`Refreshed tokens for ${sub}`);
+    // Fires roughly hourly per account, so cheap enough to keep at info: it is
+    // the main signal that a long-lived sign-in is still healthy.
+    log.info(`Refreshed tokens for ${sub}`);
     onTokensRefreshed(merged);
   });
   return client;
