@@ -47,6 +47,40 @@ before `prek run --all-files` on a clean checkout.
 
 A code change does not appear in Stream Deck until the plugin process is restarted (`npm run watch` handles this automatically, or run `streamdeck restart com.ewels.deckcal`). Property-inspector HTML / JS edits are picked up by reopening the action's settings panel.
 
+## Logging and debugging
+
+`src/util/log.ts` is a `streamDeck.logger` scope, so the SDK decides where
+entries go and at what level. It writes to a rotating file under the plugin
+dir (gitignored, 10 files, 50 MB each):
+
+```sh
+tail -f com.ewels.deckcal.sdPlugin/logs/com.ewels.deckcal.0.log
+```
+
+The SDK picks its level from `isDebugMode()`, which is true only when the
+process was launched with `--inspect` / `--inspect-brk` / `--inspect-port`:
+
+|                  | level   | minimumLevel | console output |
+| ---------------- | ------- | ------------ | -------------- |
+| normal (shipped) | `info`  | `debug`      | file only      |
+| `--inspect`      | `debug` | `trace`      | file + console |
+
+Stream Deck adds `--inspect` when the manifest's `Nodejs` block contains
+`"Debug": "enabled"`. That is **deliberately absent** — it opens an inspect
+port on end users' machines. To get verbose console output back while
+developing, add it temporarily and `streamdeck restart com.ewels.deckcal`,
+but do not commit it.
+
+Because the default level is `info`, a `log.debug(...)` call is invisible in
+any build a user runs. Two rules follow:
+
+- Anything worth diagnosing a support issue with has to be `info` or above.
+- Nothing on the 1Hz ticker or the 60s poll may log unconditionally at `info`.
+  A once-per-minute line is ~1440 entries per account per day; a log file that
+  size is unreadable. `pollAccount` logs only on the first poll, when the event
+  count changes, or on recovery from an error state. Follow that pattern for
+  anything else that fires on a timer.
+
 ## Tests
 
 Vitest, colocated as `src/**/*.test.ts`, run by `npm test` and by the `vitest`

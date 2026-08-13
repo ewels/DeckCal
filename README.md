@@ -125,6 +125,13 @@ A code change does not appear in Stream Deck until the plugin process is
 restarted (`npm run watch` does this automatically; otherwise run
 `streamdeck restart com.ewels.deckcal`).
 
+The plugin logs to a rotating file inside the plugin folder, which is the
+first place to look when something misbehaves:
+
+```sh
+tail -f com.ewels.deckcal.sdPlugin/logs/com.ewels.deckcal.0.log
+```
+
 ## Property inspector
 
 In the Stream Deck app, drag the "Meeting countdown" action onto a key, then
