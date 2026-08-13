@@ -26,9 +26,9 @@ import {
   acknowledgeForKey,
   addAccountToKeys,
   dropAccount,
-  forceRefresh,
   getPressContextForKey,
   listKnownCalendars,
+  refreshNow,
   registerKey,
   removeAccountFromKeys,
   unregisterKey,
@@ -56,7 +56,8 @@ type IncomingMessage =
   | { kind: "startAuth" }
   | { kind: "signOut"; sub?: string }
   | { kind: "listCalendars" }
-  | { kind: "getVariant" };
+  | { kind: "getVariant" }
+  | { kind: "refreshNow" };
 
 type PaneVariant = SelectionMode | "alert";
 
@@ -65,7 +66,8 @@ type OutgoingMessage =
   | { kind: "authResult"; ok: false; error: string }
   | { kind: "calendars"; byAccount: CalendarsByAccount }
   | { kind: "signedOut" }
-  | { kind: "variant"; variant: PaneVariant };
+  | { kind: "variant"; variant: PaneVariant }
+  | { kind: "refreshed"; ok: boolean };
 
 abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
   protected abstract readonly selectionMode: SelectionMode;
@@ -200,6 +202,25 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     if (msg.kind === "listCalendars") {
       if (!ev.action.isKey()) return;
       await this.sendCalendars(ev);
+      return;
+    }
+
+    if (msg.kind === "refreshNow") {
+      // Skips the 60s poll floor, so a calendar edit shows up on the key
+      // straight away instead of on the next minute boundary.
+      let ok = true;
+      try {
+        await refreshNow();
+        log.info("Manual refresh from property inspector");
+      } catch (err) {
+        ok = false;
+        log.error(`Manual refresh failed: ${err}`);
+      }
+      // The refresh is also how an expired session gets noticed, so repaint the
+      // calendars pane from here rather than making the PI ask for it. Same
+      // pattern as the sign-out branch above.
+      await this.sendCalendars(ev);
+      await this.send(ev, { kind: "refreshed", ok });
       return;
     }
 
@@ -345,7 +366,7 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
       const nextAccounts: Account[] = synced.some((a) => a.sub === info.sub)
         ? synced
         : [...synced, account];
-      forceRefresh();
+      void refreshNow();
       // Tell the PI which account just signed in, then push the full
       // (multi-account) calendar list. No-op if the PI isn't open.
       await streamDeck.ui.sendToPropertyInspector({

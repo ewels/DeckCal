@@ -25,7 +25,27 @@
       calendarList: document.getElementById("calendarList"),
       loggedInOnly: document.getElementById("loggedInOnly"),
       variantBanner: document.getElementById("variantBanner"),
+      refreshBtn: document.getElementById("refreshBtn"),
+      refreshStatus: document.getElementById("refreshStatus"),
     };
+
+    // Status line under the Refresh button. An outcome ("Updated.") clears
+    // itself; the in-progress "Refreshing..." stays until the reply lands.
+    const REFRESH_STATUS_CLEAR_MS = 3000;
+    let refreshStatusTimer = null;
+    function setRefreshStatus(text, sticky) {
+      if (refreshStatusTimer !== null) {
+        window.clearTimeout(refreshStatusTimer);
+        refreshStatusTimer = null;
+      }
+      els.refreshStatus.textContent = text;
+      if (!sticky) {
+        refreshStatusTimer = window.setTimeout(() => {
+          els.refreshStatus.textContent = "";
+          refreshStatusTimer = null;
+        }, REFRESH_STATUS_CLEAR_MS);
+      }
+    }
 
     // Per-account auth state (sub -> true when the token has expired/been
     // revoked), learned from the plugin's `calendars` message. Drives whether
@@ -290,6 +310,13 @@
         // repaints the accounts list. Calendars message comes separately.
         return;
       }
+      if (msg.kind === "refreshed") {
+        els.refreshBtn.disabled = false;
+        setRefreshStatus(msg.ok ? "Updated." : "Refresh failed.");
+        // The plugin sends a `calendars` message alongside this one, so the
+        // list repaints without the PI asking for it.
+        return;
+      }
       if (msg.kind === "variant") {
         if (
           msg.variant === "combined" ||
@@ -306,6 +333,12 @@
     els.signInBtn.addEventListener("click", () => {
       showAuthError("Opening browser...");
       void client.send("sendToPlugin", { kind: "startAuth" });
+    });
+
+    els.refreshBtn.addEventListener("click", () => {
+      els.refreshBtn.disabled = true;
+      setRefreshStatus("Refreshing...", true);
+      void client.send("sendToPlugin", { kind: "refreshNow" });
     });
 
     // Settings the PI prefills on first open so their text fields show a

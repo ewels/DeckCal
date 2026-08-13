@@ -20,6 +20,9 @@ First release.
   app of your choosing. Long press opens the first attached document.
 - Sign in to one or more Google accounts, and pick which calendars each key
   follows.
+- A **Refresh now** button in the settings panel, for when you have just
+  changed something in Google Calendar and do not want to wait for the next
+  60 second check.
 - Out of office and focus time appear as a coloured footer band, so the next
   real meeting stays visible behind them.
 - Filters for all day, tentative, and declined events, plus a horizon for

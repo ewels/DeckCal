@@ -10,6 +10,9 @@ export async function updateGlobalSettings(
 ): Promise<GlobalSettings> {
   const current = await loadGlobalSettings();
   const next = fn(current);
+  // An updater that returns its input means "nothing to change". Skip the
+  // write: pruneAcknowledged runs on every poll and usually has nothing to do.
+  if (next === current) return current;
   await streamDeck.settings.setGlobalSettings<GlobalSettings>(next);
   return next;
 }

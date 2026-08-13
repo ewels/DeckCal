@@ -50,6 +50,11 @@ type AccountState = {
   // pollAccount only logs when this changes. undefined until the first poll,
   // so that one always logs.
   lastLoggedEventCount?: number;
+  // Calendars covered by the events currently cached, sorted. The 60s floor is
+  // only valid while this still matches what the keys ask for: cached events
+  // can't answer for a calendar we have never fetched, so a change here lets
+  // the next poll skip the floor instead of showing stale data for a minute.
+  lastCalendarIds?: string[];
 };
 
 type KeyRegistration = {
@@ -158,10 +163,17 @@ async function pollAccount(state: AccountState): Promise<void> {
       : POLL_BACKOFF_MS[
           Math.min(state.failureCount - 1, POLL_BACKOFF_MS.length - 1)
         ];
-  if (state.lastPoll && now - state.lastPoll < dueAfter) return;
 
-  const calendarIds = calendarIdsForAccount(state.sub);
+  const calendarIds = calendarIdsForAccount(state.sub).sort();
   if (calendarIds.length === 0) return;
+
+  // Ticking a calendar has to show up straight away, so the floor only applies
+  // while the cached events still cover exactly the calendars being asked for.
+  const sameCalendars =
+    state.lastCalendarIds?.length === calendarIds.length &&
+    state.lastCalendarIds.every((id, i) => id === calendarIds[i]);
+  if (sameCalendars && state.lastPoll && now - state.lastPoll < dueAfter)
+    return;
 
   try {
     const events = await listEvents(
@@ -174,6 +186,7 @@ async function pollAccount(state: AccountState): Promise<void> {
     const recovered = state.failureCount > 0 || state.authRequired;
     state.events = events;
     state.lastPoll = now;
+    state.lastCalendarIds = calendarIds;
     state.failureCount = 0;
     state.authRequired = false;
     // Log the first poll, any change in what we can see, and any recovery from
@@ -185,6 +198,10 @@ async function pollAccount(state: AccountState): Promise<void> {
     }
   } catch (err) {
     state.lastPoll = now;
+    // Record the attempt, not just the success: leaving the old set here would
+    // make every later poll look like a calendar change and retry instantly,
+    // which would defeat the backoff below.
+    state.lastCalendarIds = calendarIds;
     if (err instanceof AuthRequiredError) {
       state.authRequired = true;
       state.failureCount = 1;
@@ -523,6 +540,9 @@ export function updateKeySettings(
   if (!reg) return;
   reg.settings = settings;
   reg.lastDataUrl = undefined; // force re-render
+  // Cheap unless this key changed which calendars it wants: pollAccount keeps
+  // its 60s floor for every account whose calendar set is unchanged, which
+  // matters because the PI writes settings on every keystroke.
   void runPoll();
   void renderAllKeys();
 }
@@ -608,11 +628,14 @@ export async function getPressContextForKey(
   return { state, selection };
 }
 
-// Called from the property inspector bridge when a new account signs in or
-// when account/setting changes might require fresh data.
-export function forceRefresh(): void {
+// Clears every account's poll floor, refetches, and repaints without waiting
+// for the next tick. Called from the property inspector bridge when an account
+// signs in, and by its "Refresh now" button, which awaits this so it can report
+// when the data has actually landed.
+export async function refreshNow(): Promise<void> {
   for (const a of accounts.values()) a.lastPoll = 0;
-  void runPoll();
+  await runPoll();
+  await renderAllKeys();
 }
 
 // Drop a cached client (called on sign-out so we re-read settings next time).

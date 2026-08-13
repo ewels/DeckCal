@@ -63,6 +63,10 @@
       .btn:hover {
         background: #333;
       }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
       .btn-primary:hover {
         background: #2b80ea;
       }
@@ -162,6 +166,14 @@
 
     <div id="loggedInOnly" class="hidden">
       <div class="section">Calendars</div>
+      <div class="acct">
+        <button type="button" class="btn" id="refreshBtn">Refresh now</button>
+        <small id="refreshStatus" class="help"></small>
+      </div>
+      <small class="help">
+        Calendars are checked every 60 seconds. Use this to pick up a change
+        straight away.
+      </small>
       <div id="calendarList">
         <small class="help">Sign in to load your calendars.</small>
       </div>

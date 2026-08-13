@@ -10,8 +10,9 @@ import { log } from "../util/log";
 // hangs the await forever: the poll never returns, failureCount never
 // increments, and auth-required is never surfaced. A timeout lets a wedged
 // request fail so the poller can back off and retry on a fresh connection.
-// Kept well under the 60s poll interval, with headroom for listEvents
-// iterating a handful of calendars sequentially.
+// Kept well under the 60s poll interval. listEvents fans its per-calendar
+// requests out in parallel, so this is the ceiling for a whole poll, not a
+// per-calendar cost that stacks up.
 const REQUEST_TIMEOUT_MS = 15_000;
 
 export type CalendarSummary = {
@@ -193,41 +194,56 @@ export async function listEvents(
   const timeMin = new Date(Date.now() - 5 * 60_000).toISOString(); // 5min back so currently-ongoing events are included
   const timeMax = new Date(Date.now() + windowMs).toISOString();
 
-  const merged = new Map<string, CalendarEvent>();
-  for (const calendarId of calendarIds) {
-    try {
-      const res = await calendar.events.list(
-        {
-          calendarId,
-          timeMin,
-          timeMax,
-          singleEvents: true,
-          orderBy: "startTime",
-          maxResults: 25,
-        },
-        { timeout: REQUEST_TIMEOUT_MS },
-      );
-      for (const raw of res.data.items ?? []) {
-        const ev = normalize(raw, accountSub, calendarId, userEmail);
-        if (!ev) continue;
-        // Dedupe by id across calendars (the primary calendar can mirror
-        // others, and invitations share an id across attendees' calendars) so
-        // the +N overlap count doesn't double up. Record the extra calendar on
-        // the surviving event rather than discarding it: which calendar we
-        // happened to fetch first must not decide whether a key matches.
-        const existing = merged.get(ev.id);
-        if (existing) {
-          if (!existing.calendarIds.includes(calendarId)) {
-            existing.calendarIds.push(calendarId);
-          }
-          continue;
-        }
-        merged.set(ev.id, ev);
+  // Fan the per-calendar requests out at once: they are independent, and
+  // awaiting them one at a time made a refresh cost one round trip per ticked
+  // calendar. Results are merged below in calendarIds order, not completion
+  // order, so which calendar "wins" a shared event id stays deterministic.
+  const fetched = await Promise.all(
+    calendarIds.map(async (calendarId) => {
+      try {
+        const res = await calendar.events.list(
+          {
+            calendarId,
+            timeMin,
+            timeMax,
+            singleEvents: true,
+            orderBy: "startTime",
+            maxResults: 25,
+          },
+          { timeout: REQUEST_TIMEOUT_MS },
+        );
+        return { calendarId, items: res.data.items ?? [] };
+      } catch (err) {
+        // A dead token is fatal for the whole account, so let it reject the
+        // Promise.all: the caller needs the auth-required signal rather than a
+        // partial event list.
+        if (isInvalidGrant(err)) throw new AuthRequiredError();
+        log.error(`events.list failed for calendar ${calendarId}: ${err}`);
+        // Any other failure is calendar-local; one bad calendar shouldn't kill
+        // the whole account's data.
+        return { calendarId, items: [] };
       }
-    } catch (err) {
-      if (isInvalidGrant(err)) throw new AuthRequiredError();
-      log.error(`events.list failed for calendar ${calendarId}: ${err}`);
-      // Continue with other calendars; one bad calendar shouldn't kill the loop.
+    }),
+  );
+
+  const merged = new Map<string, CalendarEvent>();
+  for (const { calendarId, items } of fetched) {
+    for (const raw of items) {
+      const ev = normalize(raw, accountSub, calendarId, userEmail);
+      if (!ev) continue;
+      // Dedupe by id across calendars (the primary calendar can mirror
+      // others, and invitations share an id across attendees' calendars) so
+      // the +N overlap count doesn't double up. Record the extra calendar on
+      // the surviving event rather than discarding it: which calendar we
+      // happened to fetch first must not decide whether a key matches.
+      const existing = merged.get(ev.id);
+      if (existing) {
+        if (!existing.calendarIds.includes(calendarId)) {
+          existing.calendarIds.push(calendarId);
+        }
+        continue;
+      }
+      merged.set(ev.id, ev);
     }
   }
 
