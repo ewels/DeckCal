@@ -18,12 +18,30 @@ The visible keys auto-update every second from a 60-second Google Calendar poll,
 ```sh
 npm run build         # one-off rollup build → com.ewels.deckcal.sdPlugin/bin/plugin.js
 npm run watch         # rebuild on save; restarts the plugin in Stream Deck via @elgato/cli
-npm run lint          # biome lint
-npm run lint:fix      # biome lint --write
-npm run check         # biome check (lint + format)
-npm run format        # prettier --write + biome format --write
-npm run format:check  # prettier --check + biome format (no write)
 ```
+
+Those two are the only npm scripts. Linting, formatting and type-checking all
+run through prek, which is the single entry point CI uses too:
+
+```sh
+prek run --all-files                  # everything below, plus the whitespace hooks
+prek run biome-check --all-files      # lint + format JS/TS
+prek run prettier --all-files         # json / yaml / markdown / html / css
+prek run tsc --all-files              # tsc --noEmit
+```
+
+biome and prettier are **not** devDependencies: prek installs its own pinned
+copies (2.4.15 and 3.4.2) in isolated environments. Their config files
+(`biome.json`, `.prettierrc.json`, `.prettierignore`) stay in the repo because
+prek's copies read them from the working tree.
+
+typescript is different and **must** stay a devDependency: it is a required
+peer of `@rollup/plugin-typescript`, so `npm run build` breaks without it. Its
+prek hook is therefore `language = "system"` and runs `npx tsc --noEmit`
+against the project's own `node_modules` — an isolated env holding only
+typescript could not resolve `@types/node` or the `.d.ts` files shipped by
+`@elgato/streamdeck`, `googleapis` and `google-auth-library`. Run `npm ci`
+before `prek run --all-files` on a clean checkout.
 
 A code change does not appear in Stream Deck until the plugin process is restarted (`npm run watch` handles this automatically, or run `streamdeck restart com.ewels.deckcal`). Property-inspector HTML / JS edits are picked up by reopening the action's settings panel.
 

@@ -101,8 +101,19 @@ sent in the token exchange request body.
 npm install
 npm run build         # one-off rollup build → com.ewels.deckcal.sdPlugin/bin/plugin.js
 npm run watch         # rebuild on save, restart the plugin in Stream Deck
-npm run check         # biome lint + format
 ```
+
+Linting, formatting and type-checking all run through
+[prek](https://github.com/j178/prek), which installs its own pinned copies of
+biome and prettier:
+
+```sh
+prek install          # install the git hook (once)
+prek run --all-files  # lint, format and type-check the whole repo
+```
+
+Run `npm ci` first on a clean checkout: the type-check hook uses the project's
+own `node_modules`.
 
 A code change does not appear in Stream Deck until the plugin process is
 restarted (`npm run watch` does this automatically; otherwise run

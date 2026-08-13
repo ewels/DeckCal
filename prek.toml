@@ -42,3 +42,23 @@ rev = "v2.2.0"
 [[repos.hooks]]
 id = "biome-check"
 additional_dependencies = ["@biomejs/biome@2.4.15"]
+
+# Type-check. Unlike biome and prettier this cannot run in a prek-managed
+# environment: tsc needs the project's own node_modules to resolve @types/node
+# and the .d.ts files shipped by @elgato/streamdeck, googleapis and
+# google-auth-library. An isolated env holding only typescript would fail on
+# every dependency import. So `language = "system"` and run `npm ci` first.
+# typescript stays an npm devDependency regardless, because
+# @rollup/plugin-typescript peer-depends on it to build the plugin.
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "tsc"
+name = "tsc --noEmit"
+entry = "npx tsc --noEmit"
+language = "system"
+files = "\\.tsx?$|(^|/)tsconfig[^/]*\\.json$"
+# Must not pass filenames: tsc ignores tsconfig.json entirely when given
+# explicit files, which would silently type-check with the wrong options.
+pass_filenames = false
