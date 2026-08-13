@@ -200,9 +200,19 @@ review requires the app name on the consent screen to match the app name on
 the homepage the OAuth client points at, and a page inside phil.ewels.co.uk
 reads as that site's name rather than DeckCal's.
 
-Two pages: `docs/index.html` and `docs/privacy/index.html`. The privacy page
-mirrors the copy at phil.ewels.co.uk/projects/deckcal/privacy/; keep the two in
-sync if either changes.
+Two pages: `docs/index.html` and `docs/privacy/index.html`. These are now the
+canonical ones: the OAuth client's homepage and privacy policy URLs point at
+<https://ewels.github.io/DeckCal/> and
+<https://ewels.github.io/DeckCal/privacy/>, and `manifest.json`'s `URL` and
+`README.md` both link the homepage. phil.ewels.co.uk/projects/deckcal/ still
+carries a copy of the same privacy text; keep the two in sync if either
+changes, or retire the copy there.
+
+Note for the Google side: an OAuth client's URLs must sit under an authorised
+domain, so `ewels.github.io` has to be added to the consent screen's authorised
+domain list, which in turn needs the site verified in Google Search Console.
+`github.io` is on the public suffix list, so `ewels.github.io` verifies as its
+own site.
 
 Deliberately hand-written HTML + CSS with **no build step and no JavaScript**,
 so a `git push` publishes it. It borrows the layout idea of phil.ewels.co.uk

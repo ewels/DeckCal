@@ -5,6 +5,10 @@
   </picture>
 </p>
 
+<p align="center">
+  <a href="https://ewels.github.io/DeckCal/">ewels.github.io/DeckCal</a>
+</p>
+
 A [Stream Deck](https://www.elgato.com/stream-deck) plugin that turns a key
 into a live indicator for your Google Calendar. The key shows a countdown to
 the next meeting (or remaining time in the current one), with a progress bar
