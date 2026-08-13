@@ -191,6 +191,41 @@ npm run build   # rollup re-emits the {"type":"module"} package.json
 git checkout -- com.ewels.deckcal.sdPlugin/manifest.json   # or: prek run --all-files
 ```
 
+## Website
+
+`docs/` is a GitHub Pages site served straight off `main` (Settings → Pages →
+"Deploy from a branch", branch `main`, folder `/docs`), at
+<https://ewels.github.io/DeckCal/>. It exists because Google's OAuth branding
+review requires the app name on the consent screen to match the app name on
+the homepage the OAuth client points at, and a page inside phil.ewels.co.uk
+reads as that site's name rather than DeckCal's.
+
+Two pages: `docs/index.html` and `docs/privacy/index.html`. The privacy page
+mirrors the copy at phil.ewels.co.uk/projects/deckcal/privacy/; keep the two in
+sync if either changes.
+
+Deliberately hand-written HTML + CSS with **no build step and no JavaScript**,
+so a `git push` publishes it. It borrows the layout idea of phil.ewels.co.uk
+(Mona Sans, a photo backdrop behind a translucent content card) but not that
+site's own assets: the backdrop is `docs/assets/background.jpg`, a sunlit
+forest photo by Gustav Gullstrand (@outoforbit) from Unsplash, credited in the
+footer of both pages. Dark mode is `prefers-color-scheme` only, driven by CSS custom
+properties in `docs/assets/style.css`.
+
+`docs/logo-*.svg` and `docs/examples/` are shared with `README.md`, which links
+them by relative path, so do not move or rename them. `.nojekyll` keeps GitHub
+Pages from running the files through Jekyll.
+
+The prettier prek hook formats the site's `.html` and `.css` (80 column default
+config), and, as everywhere else in this repo, prettier only sees git-tracked
+files. biome 2.x formats CSS too and disagrees with prettier about it, so
+`biome.json` excludes `**/*.css`; without that the two hooks reformat
+`style.css` back and forth on every commit. The split stays as it always was:
+biome owns JS/TS, prettier owns everything else.
+
+`check-added-large-files` is raised to `--maxkb=1000` in `prek.toml` for
+`sweep.mp4`.
+
 ## Architecture
 
 ```
@@ -224,6 +259,13 @@ com.ewels.deckcal.sdPlugin/
   ui/countdown.js       PI bridge: sign-in, calendar checkbox list, conditional show/hide
   bin/plugin.js         rollup output, gitignored
   imgs/                 action + plugin icons (svg sources + rsvg-rendered pngs)
+docs/                   GitHub Pages site (see "Website" below) + README assets
+  index.html            homepage
+  privacy/index.html    privacy policy (the URL Google's OAuth config points at)
+  assets/               style.css, Mona-Sans.woff2, background.jpg
+  actions/              144x144 tile renderings of the four action icons
+  examples/             key-state screenshots + sweep.mp4, also used by README.md
+  logo-*.svg            wordmark, light and dark, also used by README.md
 vitest.config.ts        test config: include src/**/*.test.ts, node environment
 rollup.config.mjs       bundles src/ to bin/plugin.js
                         @googleapis/calendar + google-auth-library + googleapis-common

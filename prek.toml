@@ -26,6 +26,11 @@ id = "mixed-line-ending"
 
 [[repos.hooks]]
 id = "check-added-large-files"
+# Default is 500 kB, which the docs site's sweep.mp4 (~860 kB) trips. That
+# video is the clearest demo of the multi-key sweep, so raise the ceiling
+# rather than drop it. Still low enough to catch an accidental node_modules
+# or .streamDeckPlugin commit.
+args = ["--maxkb=1000"]
 
 [[repos]]
 repo = "https://github.com/rbubley/mirrors-prettier"

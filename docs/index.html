@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DeckCal</title>
+    <meta
+      name="description"
+      content="DeckCal is a Stream Deck plugin that turns a key into a live countdown to your next Google Calendar meeting, with a press to join it."
+    />
+    <link rel="icon" href="app-icon.svg" type="image/svg+xml" />
+    <link rel="canonical" href="https://ewels.github.io/DeckCal/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="DeckCal" />
+    <meta
+      property="og:description"
+      content="A Stream Deck plugin that turns a key into a live countdown to your next Google Calendar meeting."
+    />
+    <meta property="og:url" content="https://ewels.github.io/DeckCal/" />
+    <meta
+      property="og:image"
+      content="https://ewels.github.io/DeckCal/marketplace-thumbnail.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="assets/style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="logo-dark.svg" />
+          <img
+            class="hero__logo"
+            src="logo-light.svg"
+            alt="DeckCal"
+            width="400"
+            height="90"
+          />
+        </picture>
+        <p class="hero__tagline">
+          A Stream Deck plugin that turns a key into a live countdown to your
+          next Google Calendar meeting, with a press to join it.
+        </p>
+        <div class="buttons">
+          <a
+            class="button button--primary"
+            href="https://github.com/ewels/DeckCal/releases/latest"
+            >Download DeckCal</a
+          >
+          <a class="button" href="https://github.com/ewels/DeckCal">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+              />
+            </svg>
+            Source on GitHub
+          </a>
+          <a class="button" href="privacy/">Privacy policy</a>
+        </div>
+      </header>
+
+      <main>
+        <h2>What it does</h2>
+        <p class="lede">
+          DeckCal reads your Google Calendar and puts it where you cannot miss
+          it: on the keys in front of you.
+        </p>
+        <p>
+          A key shows a countdown to your next meeting, or the time remaining in
+          the one you are already in. A blue bar closes the gap to the next
+          meeting, a yellow fill sweeps across the key over the last few
+          minutes, and a green fill tracks time elapsed once the meeting is
+          under way. Press the key to join.
+        </p>
+
+        <h2>At a glance</h2>
+        <ul class="states">
+          <li class="state">
+            <img
+              src="examples/no_event.png"
+              alt="Stream Deck key showing a calendar glyph"
+            />
+            <p>
+              <strong>Idle</strong> Nothing on the calendar today any time soon.
+            </p>
+          </li>
+          <li class="state">
+            <img
+              src="examples/future_23m.png"
+              alt="Stream Deck key counting down 23 minutes"
+            />
+            <p>
+              <strong>Countdown</strong> Time remaining to the next meeting,
+              with a blue bar.
+            </p>
+          </li>
+          <li class="state">
+            <img
+              src="examples/future_3m.png"
+              alt="Stream Deck key with a yellow fill and 3 minutes remaining"
+            />
+            <p>
+              <strong>Imminent</strong> In the last 5 minutes a yellow block
+              gradually fills the key.
+            </p>
+          </li>
+          <li class="state">
+            <img
+              src="examples/meeting_now.gif"
+              alt="Stream Deck key flashing the word NOW"
+            />
+            <p>
+              <strong>Meeting starts</strong> Flashes <code>NOW</code> until you
+              press. Pressing joins the meeting.
+            </p>
+          </li>
+          <li class="state">
+            <img
+              src="examples/ongoing_18m_left.png"
+              alt="Stream Deck key with a green bar and 18 minutes left"
+            />
+            <p>
+              <strong>In the meeting</strong> Time remaining, with a green bar
+              showing time elapsed.
+            </p>
+          </li>
+          <li class="state">
+            <img
+              src="examples/tomorrow_dimmed.png"
+              alt="Dimmed Stream Deck key showing a time of day"
+            />
+            <p>
+              <strong>Beyond today</strong> Distant events are dimmed and show a
+              time of day instead of a countdown.
+            </p>
+          </li>
+          <li class="state">
+            <img
+              src="examples/focus_time.png"
+              alt="Stream Deck key with a purple footer band"
+            />
+            <p>
+              <strong>Focus time</strong> Purple footer band, so you can still
+              see the next regular meeting.
+            </p>
+          </li>
+          <li class="state">
+            <img
+              src="examples/out_of_office.png"
+              alt="Stream Deck key with a grey footer band"
+            />
+            <p>
+              <strong>Out of office</strong> Grey footer band, so you can still
+              see the next meeting.
+            </p>
+          </li>
+        </ul>
+
+        <h2>Multi-key sweep</h2>
+        <p>
+          Place several <strong>Meeting countdown</strong> (or
+          <strong>Upcoming meeting</strong>) keys next to each other and the
+          yellow imminent fill sweeps across them as a single band in the last
+          few minutes before a meeting. Far more visible than a single key can
+          manage on its own.
+        </p>
+        <video
+          src="examples/sweep.mp4"
+          autoplay
+          loop
+          muted
+          playsinline
+          controls
+        >
+          Your browser does not support the video tag.
+        </video>
+
+        <h2>Four actions</h2>
+        <ul class="actions">
+          <li class="action">
+            <img src="actions/countdown.svg" alt="" />
+            <div>
+              <h3>Meeting countdown</h3>
+              <p>
+                The meeting you are in, otherwise the next upcoming one. The "do
+                everything" action.
+              </p>
+            </div>
+          </li>
+          <li class="action">
+            <img src="actions/upcoming.svg" alt="" />
+            <div>
+              <h3>Upcoming meeting</h3>
+              <p>
+                Only the next upcoming meeting. Ignores meetings already in
+                progress.
+              </p>
+            </div>
+          </li>
+          <li class="action">
+            <img src="actions/ongoing.svg" alt="" />
+            <div>
+              <h3>Ongoing meeting</h3>
+              <p>
+                Only the meeting you are currently in. Idle when nothing is
+                happening.
+              </p>
+            </div>
+          </li>
+          <li class="action">
+            <img src="actions/alert.svg" alt="" />
+            <div>
+              <h3>Meeting alert</h3>
+              <p>
+                A blank tile that lights up only as a meeting starts. Long press
+                joins it.
+              </p>
+            </div>
+          </li>
+        </ul>
+
+        <h2>Features</h2>
+        <ul class="features">
+          <li class="feature">
+            <h3>Live countdown</h3>
+            <p>
+              Time remaining to (or within) a meeting, refreshed every second,
+              with a coloured bar that fills as the meeting elapses.
+            </p>
+          </li>
+          <li class="feature">
+            <h3>Imminent fill</h3>
+            <p>
+              A yellow block gradually fills the key over the last few minutes,
+              sweeping across neighbouring keys as one band.
+            </p>
+          </li>
+          <li class="feature">
+            <h3>Press to join</h3>
+            <p>
+              Short press opens the current Google Meet, Zoom, or Teams meeting,
+              in a browser or an app of your choosing. Long press opens the
+              meeting's first attached doc.
+            </p>
+          </li>
+          <li class="feature">
+            <h3>Multiple accounts</h3>
+            <p>
+              Sign in with one or more Google accounts and tick exactly which
+              calendars feed the countdown.
+            </p>
+          </li>
+          <li class="feature">
+            <h3>Special events</h3>
+            <p>
+              Out of office and focus time events get their own footer band, so
+              you can still see your next regular meeting.
+            </p>
+          </li>
+        </ul>
+
+        <h2>Install</h2>
+        <p>
+          Download the latest
+          <code>com.ewels.deckcal.streamDeckPlugin</code> file from the
+          <a href="https://github.com/ewels/DeckCal/releases/latest"
+            >GitHub releases page</a
+          >
+          and double click it. Stream Deck installs the plugin and adds the four
+          DeckCal actions to its action list. Drag one onto a key, then use the
+          sign in button in the key's settings panel to connect a Google
+          account.
+        </p>
+
+        <h2>Privacy</h2>
+        <div class="callout">
+          <p>
+            DeckCal runs entirely on your own machine. There is no backend, no
+            analytics, and no tracking. Calendar data is read on a read-only
+            basis and never leaves your computer.
+          </p>
+          <p>
+            Sign in uses a loopback PKCE flow (<a
+              href="https://datatracker.ietf.org/doc/html/rfc8252"
+              >RFC 8252</a
+            >), so your Google credentials are only ever handled by Google
+            itself. Read the full <a href="privacy/">DeckCal privacy policy</a>.
+          </p>
+        </div>
+      </main>
+
+      <footer class="footer">
+        <span
+          >DeckCal is free and open source, released under the MIT
+          licence.</span
+        >
+        <nav>
+          <a href="https://github.com/ewels/DeckCal">GitHub</a>
+          <a href="privacy/">Privacy policy</a>
+          <a href="https://phil.ewels.co.uk">Phil Ewels</a>
+        </nav>
+        <span class="footer__credit"
+          >Background photo by
+          <a href="https://unsplash.com/@outoforbit">Gustav Gullstrand</a> on
+          <a href="https://unsplash.com/photos/d6kSvT2xZQo">Unsplash</a>.</span
+        >
+      </footer>
+    </div>
+  </body>
+</html>

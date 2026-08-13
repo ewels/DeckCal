@@ -11,7 +11,8 @@
       "!node_modules",
       "!com.ewels.deckcal.sdPlugin/bin",
       "!com.ewels.deckcal.sdPlugin/logs",
-      "!package-lock.json"
+      "!package-lock.json",
+      "!**/*.css"
     ]
   },
   "formatter": {

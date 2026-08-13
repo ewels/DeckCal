@@ -1,0 +1,414 @@
+/* DeckCal site styles. Hand-rolled to match phil.ewels.co.uk without a build step. */
+
+@font-face {
+  font-family: "Mona-Sans";
+  src:
+    url("Mona-Sans.woff2") format("woff2 supports variations"),
+    url("Mona-Sans.woff2") format("woff2-variations");
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+  font-display: swap;
+}
+
+:root {
+  --blue: #4285f4;
+  --yellow: #ffc107;
+  --green: #34a853;
+  --purple: #a142f4;
+  --grey: #9aa0a6;
+
+  --page: rgb(255 255 255 / 95%);
+  --text: #18181b;
+  --muted: #52525b;
+  --faint: #71717a;
+  --border: #e4e4e7;
+  --tile-bg: #fafafa;
+  --code-bg: #eef2ff;
+  --shadow: 0 1px 3px rgb(0 0 0 / 8%);
+  --link: #1d4ed8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: rgb(0 0 0 / 80%);
+    --text: #e4e4e7;
+    --muted: #a1a1aa;
+    --faint: #8f8f98;
+    --border: #27272a;
+    --tile-bg: #141416;
+    --code-bg: #1e2033;
+    --shadow: 0 1px 3px rgb(0 0 0 / 40%);
+    --link: #7aa7ff;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family:
+    "Mona-Sans",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--text);
+  /* Photo by Gustav Gullstrand (@outoforbit) on Unsplash:
+     https://unsplash.com/photos/d6kSvT2xZQo */
+  background: #1b2a16 url("background.jpg") center / cover fixed no-repeat;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 62rem;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 3rem 1.5rem 0;
+  background: var(--page);
+  backdrop-filter: blur(20px);
+}
+
+@media (min-width: 48rem) {
+  .page {
+    padding: 4rem 3.5rem 0;
+  }
+}
+
+a {
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.75rem;
+  margin: 3.5rem 0 0.5rem;
+}
+
+h3 {
+  font-size: 1.15rem;
+  margin: 0 0 0.25rem;
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875em;
+  background: var(--code-bg);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+.lede {
+  font-size: 1.2rem;
+  color: var(--muted);
+}
+
+.subtle {
+  color: var(--muted);
+}
+
+/* Hero ------------------------------------------------------------------ */
+
+.hero {
+  text-align: center;
+  padding: 1rem 0 2.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero__logo {
+  width: min(100%, 38rem);
+  height: auto;
+  margin: 0 auto 1.5rem;
+  display: block;
+}
+
+.hero__tagline {
+  font-size: 1.35rem;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 42rem;
+  margin: 0 auto 2rem;
+  text-wrap: balance;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--tile-bg);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  border-color: var(--blue);
+}
+
+.button--primary {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.button--primary:hover {
+  border-color: #1b62d6;
+  background: #1b62d6;
+}
+
+.button svg {
+  width: 1.1em;
+  height: 1.1em;
+  fill: currentcolor;
+}
+
+/* Key state gallery ----------------------------------------------------- */
+
+.states {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.state {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.state img {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.state p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.state strong {
+  display: block;
+  color: var(--text);
+}
+
+/* Actions --------------------------------------------------------------- */
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.action {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--tile-bg);
+}
+
+.action img {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  border-radius: 8px;
+}
+
+.action p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* Features -------------------------------------------------------------- */
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.25rem 2rem;
+  margin: 2rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature {
+  border-left: 3px solid var(--blue);
+  padding-left: 1rem;
+}
+
+.feature:nth-child(2) {
+  border-color: var(--yellow);
+}
+
+.feature:nth-child(3) {
+  border-color: var(--green);
+}
+
+.feature:nth-child(4) {
+  border-color: var(--purple);
+}
+
+.feature:nth-child(5) {
+  border-color: var(--grey);
+}
+
+.feature p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Media ----------------------------------------------------------------- */
+
+video {
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  margin: 1.5rem 0;
+  display: block;
+}
+
+/* Callout --------------------------------------------------------------- */
+
+.callout {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--tile-bg);
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+}
+
+.callout p:last-child {
+  margin-bottom: 0;
+}
+
+/* Prose article (privacy page) ------------------------------------------ */
+
+.prose h1 {
+  font-size: 2.25rem;
+  margin: 0.5rem 0 0.5rem;
+}
+
+.prose h2 {
+  font-size: 1.4rem;
+  margin: 2.5rem 0 0.5rem;
+}
+
+.prose ul {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.prose li {
+  margin-bottom: 0.35rem;
+}
+
+.backlink {
+  display: inline-block;
+  font-size: 0.9rem;
+  color: var(--faint);
+  text-decoration: none;
+  margin-bottom: 1rem;
+}
+
+.backlink:hover {
+  color: var(--link);
+}
+
+/* Footer ---------------------------------------------------------------- */
+
+.footer {
+  margin-top: 4rem;
+  padding: 2rem 0 3rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--faint);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  justify-content: space-between;
+}
+
+.footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.footer__credit {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.footer a {
+  color: var(--faint);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .button:hover {
+    transform: none;
+  }
+}
