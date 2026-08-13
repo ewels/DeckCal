@@ -43,11 +43,12 @@ jobs:
         run: npm run build
 
       - name: Stage runtime deps inside the plugin folder
-        # rollup keeps googleapis + google-auth-library (and their transitive
-        # gaxios + gtoken) external. Write a package.json listing them so npm
-        # pulls the deps alongside bin/plugin.js for `streamdeck pack`. The
-        # rollup build also emits a package.json here (`{"type":"module"}`),
-        # which this step overwrites with the full dep set.
+        # rollup keeps @googleapis/calendar + google-auth-library (and their
+        # transitive googleapis-common + gaxios + gtoken) external. Write a
+        # package.json listing them so npm pulls the deps alongside
+        # bin/plugin.js for `streamdeck pack`. The rollup build also emits a
+        # package.json here (`{"type":"module"}`), which this step overwrites
+        # with the full dep set.
         #
         # The version ranges are read straight out of the root package.json so
         # the packed plugin can never ship a different major than the one the
@@ -56,7 +57,7 @@ jobs:
           set -euo pipefail
           node --input-type=module -e '
             import { readFileSync, writeFileSync } from "node:fs";
-            const externals = ["googleapis", "google-auth-library"];
+            const externals = ["@googleapis/calendar", "google-auth-library"];
             const root = JSON.parse(readFileSync("package.json", "utf8"));
             const dependencies = Object.fromEntries(
               externals.map((name) => {

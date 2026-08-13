@@ -1,5 +1,8 @@
+import {
+  type calendar_v3,
+  calendar as calendarApi,
+} from "@googleapis/calendar";
 import type { OAuth2Client } from "google-auth-library";
-import { type calendar_v3, google } from "googleapis";
 import { log } from "../util/log";
 
 // Per-request timeout for Google API calls. Without this, a request that
@@ -81,7 +84,7 @@ function isInvalidGrant(err: unknown): boolean {
 export async function listCalendars(
   auth: OAuth2Client,
 ): Promise<CalendarSummary[]> {
-  const calendar = google.calendar({ version: "v3", auth });
+  const calendar = calendarApi({ version: "v3", auth });
   try {
     const res = await calendar.calendarList.list(
       { minAccessRole: "reader" },
@@ -186,7 +189,7 @@ export async function listEvents(
   windowMs: number,
   userEmail: string | null,
 ): Promise<CalendarEvent[]> {
-  const calendar = google.calendar({ version: "v3", auth });
+  const calendar = calendarApi({ version: "v3", auth });
   const timeMin = new Date(Date.now() - 5 * 60_000).toISOString(); // 5min back so currently-ongoing events are included
   const timeMax = new Date(Date.now() + windowMs).toISOString();
 

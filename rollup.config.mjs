@@ -32,11 +32,21 @@ for (const key of requiredEnv) {
  */
 const config = {
   input: "src/plugin.ts",
-  // googleapis and its transitive deps are massive and contain CommonJS that
-  // resists bundling. Mark them external and resolve from node_modules at
-  // runtime. The release workflow stages a package.json inside the sdPlugin
-  // dir so npm installs them alongside bin/plugin.js.
-  external: [/^googleapis/, /^google-auth-library/, /^gaxios/, /^gtoken/],
+  // The Google client libraries contain CommonJS that resists bundling. Mark
+  // them external and resolve from node_modules at runtime. The release
+  // workflow stages a package.json inside the sdPlugin dir so npm installs
+  // them alongside bin/plugin.js.
+  //
+  // Only @googleapis/calendar is used, never the `googleapis` metapackage:
+  // that one bundles every Google API and costs ~200 MB unpacked for the two
+  // Calendar calls this plugin makes.
+  external: [
+    /^@googleapis\/calendar/,
+    /^googleapis-common/,
+    /^google-auth-library/,
+    /^gaxios/,
+    /^gtoken/,
+  ],
   output: {
     file: `${sdPlugin}/bin/plugin.js`,
     sourcemap: isWatching,

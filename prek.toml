@@ -45,7 +45,7 @@ additional_dependencies = ["@biomejs/biome@2.4.15"]
 
 # Type-check. Unlike biome and prettier this cannot run in a prek-managed
 # environment: tsc needs the project's own node_modules to resolve @types/node
-# and the .d.ts files shipped by @elgato/streamdeck, googleapis and
+# and the .d.ts files shipped by @elgato/streamdeck, @googleapis/calendar and
 # google-auth-library. An isolated env holding only typescript would fail on
 # every dependency import. So `language = "system"` and run `npm ci` first.
 # typescript stays an npm devDependency regardless, because

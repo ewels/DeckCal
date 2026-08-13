@@ -40,7 +40,7 @@ peer of `@rollup/plugin-typescript`, so `npm run build` breaks without it. Its
 prek hook is therefore `language = "system"` and runs `npx tsc --noEmit`
 against the project's own `node_modules` — an isolated env holding only
 typescript could not resolve `@types/node` or the `.d.ts` files shipped by
-`@elgato/streamdeck`, `googleapis` and `google-auth-library`. Run `npm ci`
+`@elgato/streamdeck`, `@googleapis/calendar` and `google-auth-library`. Run `npm ci`
 before `prek run --all-files` on a clean checkout.
 
 A code change does not appear in Stream Deck until the plugin process is restarted (`npm run watch` handles this automatically, or run `streamdeck restart com.ewels.deckcal`). Property-inspector HTML / JS edits are picked up by reopening the action's settings panel.
@@ -66,7 +66,7 @@ git push origin main
 gh release create vX.Y.Z --title "vX.Y.Z — <headline>" --notes "..."
 ```
 
-Packaging runs on GitHub Actions (`.github/workflows/release.yml`) on `release: published`. The workflow runs `npm ci`, then `npm run build` with `DECKCAL_GOOGLE_CLIENT_ID` / `DECKCAL_GOOGLE_CLIENT_SECRET` from repo secrets, stages a tiny `package.json` inside `com.ewels.deckcal.sdPlugin/` so `googleapis` + `google-auth-library` (and their transitive `gaxios` + `gtoken`) are installed alongside `bin/plugin.js`, runs `streamdeck pack`, and `gh release upload`s the resulting `com.ewels.deckcal.streamDeckPlugin` to the release.
+Packaging runs on GitHub Actions (`.github/workflows/release.yml`) on `release: published`. The workflow runs `npm ci`, then `npm run build` with `DECKCAL_GOOGLE_CLIENT_ID` / `DECKCAL_GOOGLE_CLIENT_SECRET` from repo secrets, stages a tiny `package.json` inside `com.ewels.deckcal.sdPlugin/` so `@googleapis/calendar` + `google-auth-library` (and their transitive `googleapis-common` + `gaxios` + `gtoken`) are installed alongside `bin/plugin.js`, runs `streamdeck pack`, and `gh release upload`s the resulting `com.ewels.deckcal.streamDeckPlugin` to the release.
 
 ### Local pack smoke check
 
@@ -79,7 +79,7 @@ npm run build                          # produces com.ewels.deckcal.sdPlugin/bin
 # package.json so the smoke check installs exactly what a release would.
 node --input-type=module -e '
   import { readFileSync, writeFileSync } from "node:fs";
-  const externals = ["googleapis", "google-auth-library"];
+  const externals = ["@googleapis/calendar", "google-auth-library"];
   const root = JSON.parse(readFileSync("package.json", "utf8"));
   const dependencies = Object.fromEntries(
     externals.map((name) => [name, root.dependencies[name]]),
@@ -122,7 +122,7 @@ src/
                         upcoming / ongoing) and `renderVariant` (alert).
   calendar/
     auth.ts             OAuth 2.0 PKCE loopback flow, token persistence in global settings
-    client.ts           googleapis wrapper: listCalendars, listEvents, normalize → CalendarEvent
+    client.ts           @googleapis/calendar wrapper: listCalendars, listEvents, normalize → CalendarEvent
     selection.ts        filter + pick (ongoing-most-recent > next upcoming) + footer band
     conferencing.ts     detect Meet / Zoom / Teams URL + first attachment fileUrl
   render/
@@ -140,7 +140,8 @@ com.ewels.deckcal.sdPlugin/
   bin/plugin.js         rollup output, gitignored
   imgs/                 action + plugin icons (svg sources + rsvg-rendered pngs)
 rollup.config.mjs       bundles src/ to bin/plugin.js
-                        googleapis + google-auth-library + gaxios + gtoken are external
+                        @googleapis/calendar + google-auth-library + googleapis-common
+                        + gaxios + gtoken are external
                         — resolved from node_modules at runtime
 ```
 
