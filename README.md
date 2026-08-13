@@ -101,7 +101,13 @@ sent in the token exchange request body.
 npm install
 npm run build         # one-off rollup build → com.ewels.deckcal.sdPlugin/bin/plugin.js
 npm run watch         # rebuild on save, restart the plugin in Stream Deck
+npm test              # run the unit tests
+npm run test:watch    # re-run tests on save
 ```
+
+Tests are [Vitest](https://vitest.dev) suites living beside the code they
+cover (`src/**/*.test.ts`), covering settings parsing, event selection,
+conferencing detection and tile rendering.
 
 Linting, formatting and type-checking all run through
 [prek](https://github.com/j178/prek), which installs its own pinned copies of

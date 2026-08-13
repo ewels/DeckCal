@@ -18,9 +18,11 @@ The visible keys auto-update every second from a 60-second Google Calendar poll,
 ```sh
 npm run build         # one-off rollup build → com.ewels.deckcal.sdPlugin/bin/plugin.js
 npm run watch         # rebuild on save; restarts the plugin in Stream Deck via @elgato/cli
+npm test              # vitest run — the unit suite
+npm run test:watch    # vitest in watch mode
 ```
 
-Those two are the only npm scripts. Linting, formatting and type-checking all
+Those four are the only npm scripts. Linting, formatting and type-checking all
 run through prek, which is the single entry point CI uses too:
 
 ```sh
@@ -44,6 +46,44 @@ typescript could not resolve `@types/node` or the `.d.ts` files shipped by
 before `prek run --all-files` on a clean checkout.
 
 A code change does not appear in Stream Deck until the plugin process is restarted (`npm run watch` handles this automatically, or run `streamdeck restart com.ewels.deckcal`). Property-inspector HTML / JS edits are picked up by reopening the action's settings panel.
+
+## Tests
+
+Vitest, colocated as `src/**/*.test.ts`, run by `npm test` and by the `vitest`
+job in `.github/workflows/lint.yml`. Tests are **not** a prek hook: they would
+slow every commit, and CI runs them as a separate job anyway.
+
+Coverage is deliberately scoped to the four modules that hold real logic and
+import nothing from `@elgato/streamdeck`, so they need no SDK harness:
+
+| Module                     | What is covered                                                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `settings.ts`              | `toNumber` / `optionalNumber` three-state parsing, `migrateSettings` legacy lifts, `retainAccounts`, provider + next-meeting resolution |
+| `calendar/selection.ts`    | filter pipeline, horizon, ongoing-vs-imminent priority, gap anchoring, overlap counting, OOO / focus modes, the three selection modes   |
+| `calendar/conferencing.ts` | Meet / Zoom / Teams detection and precedence, attachment pick                                                                           |
+| `render/icon.ts`           | time formatting, every render state, fill geometry, the multi-key sweep, alert variant                                                  |
+
+`runtime.ts`, `store.ts`, `launch.ts`, `client.ts` and `auth.ts` all import
+`streamDeck` (directly or via `util/log`), which reads `process.execArgv` and
+opens a websocket on import. Testing those means a fake SDK; not done yet.
+
+Two conventions worth keeping:
+
+- **Inject `now`, never fake the clock.** `select()` takes `options.now` and
+  `formatUpcomingLabel()` takes a trailing `now`, so tests pass the fixed
+  `NOW` from `src/test-utils.ts` instead of installing fake timers.
+- **Assert on rendered SVG, not on private helpers.** `buildSvgTile` returns a
+  base64 data URL; `decodeTile()` + `rectWidth()` in `src/test-utils.ts` pull
+  out real rect geometry. That keeps `blockSlice`, `imminentFill` and
+  `sliceRect` private while still pinning the band maths.
+
+`src/test-utils.ts` lives under `src/` so `tsc` and biome cover it, but nothing
+in the plugin's import graph (rooted at `src/plugin.ts`) reaches it, so rollup
+never bundles it.
+
+Note that prek only passes **git-tracked** files to its hooks: a brand-new test
+file is invisible to biome and prettier until it is staged. `npm test` and
+`npm run build` see it either way.
 
 ## Git hooks: prek, not pre-commit
 
@@ -133,12 +173,15 @@ src/
   util/
     log.ts              streamDeck.logger scope
     launch.ts           openUrl + openInApp (macOS / Windows)
+  test-utils.ts         test-only fixtures (ev(), NOW) + SVG assertion helpers
+  **/*.test.ts          vitest suites, colocated with the module they cover
 com.ewels.deckcal.sdPlugin/
   manifest.json         plugin manifest (Elgato schema)
   ui/countdown.html     property inspector (sdpi-components v4 over CDN)
   ui/countdown.js       PI bridge: sign-in, calendar checkbox list, conditional show/hide
   bin/plugin.js         rollup output, gitignored
   imgs/                 action + plugin icons (svg sources + rsvg-rendered pngs)
+vitest.config.ts        test config: include src/**/*.test.ts, node environment
 rollup.config.mjs       bundles src/ to bin/plugin.js
                         @googleapis/calendar + google-auth-library + googleapis-common
                         + gaxios + gtoken are external
