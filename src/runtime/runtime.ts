@@ -129,10 +129,12 @@ function calendarIdsForAccount(sub: string): string[] {
     const usesAccount = (r.settings.accounts ?? []).some((a) => a.sub === sub);
     if (!usesAccount) continue;
     const sels = r.settings.calendarSelections;
-    if (!sels || sels.length === 0) {
+    if (!sels) {
       // Fresh key with the account attached but no explicit selections yet:
       // poll the account's primary so the user sees something while the PI
-      // ticks primary on first open.
+      // ticks primary on first open. An explicitly empty array means the user
+      // unticked everything — that key wants nothing, and must not drag
+      // "primary" into the account-wide fetch on other keys' behalf.
       set.add("primary");
       continue;
     }
@@ -245,7 +247,7 @@ function toRenderState(
     for (const a of keyAccounts) wanted.add(selKey(a.sub, "primary"));
   }
   const filtered = allEvents.filter((e) =>
-    wanted.has(selKey(e.accountSub, e.calendarId)),
+    e.calendarIds.some((cid) => wanted.has(selKey(e.accountSub, cid))),
   );
   const result = select(filtered, reg.settings, { mode: reg.selectionMode });
 
@@ -539,7 +541,7 @@ function filteredEventsForKey(actionId: string): CalendarEvent[] | null {
     for (const a of keyAccounts) wanted.add(selKey(a.sub, "primary"));
   }
   return allEvents.filter((e) =>
-    wanted.has(selKey(e.accountSub, e.calendarId)),
+    e.calendarIds.some((cid) => wanted.has(selKey(e.accountSub, cid))),
   );
 }
 

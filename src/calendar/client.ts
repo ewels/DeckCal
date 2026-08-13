@@ -27,7 +27,12 @@ export type CalendarEventAttachment = {
 export type CalendarEvent = {
   id: string;
   accountSub: string;
-  calendarId: string;
+  // Every calendar this event was returned from. Usually one entry, but the
+  // same event can arrive under several IDs — most commonly "primary" and the
+  // user's own address, which are aliases for the same calendar. Keys match on
+  // *any* entry, so an event fetched under one alias still satisfies a
+  // selection stored under the other.
+  calendarIds: string[];
   summary: string;
   status: string; // "confirmed" | "tentative" | "cancelled"
   startMs: number;
@@ -147,7 +152,7 @@ function normalize(
   return {
     id: raw.id,
     accountSub,
-    calendarId,
+    calendarIds: [calendarId],
     summary: raw.summary ?? "(no title)",
     status: raw.status ?? "confirmed",
     startMs,
@@ -202,8 +207,19 @@ export async function listEvents(
       for (const raw of res.data.items ?? []) {
         const ev = normalize(raw, accountSub, calendarId, userEmail);
         if (!ev) continue;
-        // Dedupe by id across calendars (rare; primary cal can mirror others).
-        if (!merged.has(ev.id)) merged.set(ev.id, ev);
+        // Dedupe by id across calendars (the primary calendar can mirror
+        // others, and invitations share an id across attendees' calendars) so
+        // the +N overlap count doesn't double up. Record the extra calendar on
+        // the surviving event rather than discarding it: which calendar we
+        // happened to fetch first must not decide whether a key matches.
+        const existing = merged.get(ev.id);
+        if (existing) {
+          if (!existing.calendarIds.includes(calendarId)) {
+            existing.calendarIds.push(calendarId);
+          }
+          continue;
+        }
+        merged.set(ev.id, ev);
       }
     } catch (err) {
       if (isInvalidGrant(err)) throw new AuthRequiredError();

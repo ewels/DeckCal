@@ -180,12 +180,20 @@ export function retainAccounts(
   settings: CountdownSettings,
   keep: (sub: string) => boolean,
 ): CountdownSettings {
+  const sels = settings.calendarSelections;
+  const kept = sels?.filter((s) => keep(s.accountSub));
+  // An empty array is meaningful: it says "the user unticked every calendar",
+  // which pins the key to the noCalendars state and suppresses the primary
+  // fallback. Only the property inspector should ever produce that. Losing
+  // every selection because its account went away is a different thing, so
+  // reset to undefined (unconfigured) instead — otherwise the key stays blank
+  // forever, even after the user signs back in.
+  const nextSels =
+    kept && kept.length === 0 && (sels?.length ?? 0) > 0 ? undefined : kept;
   return {
     ...settings,
     accounts: (settings.accounts ?? []).filter((a) => keep(a.sub)),
-    calendarSelections: (settings.calendarSelections ?? []).filter((s) =>
-      keep(s.accountSub),
-    ),
+    calendarSelections: nextSels,
   };
 }
 
