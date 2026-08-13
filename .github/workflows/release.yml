@@ -48,18 +48,31 @@ jobs:
         # pulls the deps alongside bin/plugin.js for `streamdeck pack`. The
         # rollup build also emits a package.json here (`{"type":"module"}`),
         # which this step overwrites with the full dep set.
+        #
+        # The version ranges are read straight out of the root package.json so
+        # the packed plugin can never ship a different major than the one the
+        # build and `tsc --noEmit` ran against.
         run: |
           set -euo pipefail
-          cat > com.ewels.deckcal.sdPlugin/package.json <<'EOF'
-          {
-            "type": "module",
-            "private": true,
-            "dependencies": {
-              "googleapis": "^146.0.0",
-              "google-auth-library": "^9.15.0"
-            }
-          }
-          EOF
+          node --input-type=module -e '
+            import { readFileSync, writeFileSync } from "node:fs";
+            const externals = ["googleapis", "google-auth-library"];
+            const root = JSON.parse(readFileSync("package.json", "utf8"));
+            const dependencies = Object.fromEntries(
+              externals.map((name) => {
+                const range = root.dependencies?.[name];
+                if (!range) {
+                  throw new Error(`${name} is missing from root package.json dependencies`);
+                }
+                return [name, range];
+              }),
+            );
+            writeFileSync(
+              "com.ewels.deckcal.sdPlugin/package.json",
+              `${JSON.stringify({ type: "module", private: true, dependencies }, null, 2)}\n`,
+            );
+          '
+          cat com.ewels.deckcal.sdPlugin/package.json
           cd com.ewels.deckcal.sdPlugin
           npm install --omit=dev --no-package-lock --no-fund --no-audit
 

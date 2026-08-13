@@ -75,16 +75,20 @@ To verify the packed output before tagging a release — same steps the workflow
 ```sh
 npm run build                          # produces com.ewels.deckcal.sdPlugin/bin/plugin.js
 
-cat > com.ewels.deckcal.sdPlugin/package.json <<'EOF'
-{
-  "type": "module",
-  "private": true,
-  "dependencies": {
-    "googleapis": "^146.0.0",
-    "google-auth-library": "^9.15.0"
-  }
-}
-EOF
+# Mirror of the workflow step: copy the external deps' ranges out of the root
+# package.json so the smoke check installs exactly what a release would.
+node --input-type=module -e '
+  import { readFileSync, writeFileSync } from "node:fs";
+  const externals = ["googleapis", "google-auth-library"];
+  const root = JSON.parse(readFileSync("package.json", "utf8"));
+  const dependencies = Object.fromEntries(
+    externals.map((name) => [name, root.dependencies[name]]),
+  );
+  writeFileSync(
+    "com.ewels.deckcal.sdPlugin/package.json",
+    `${JSON.stringify({ type: "module", private: true, dependencies }, null, 2)}\n`,
+  );
+'
 (cd com.ewels.deckcal.sdPlugin && npm install --omit=dev --no-package-lock --no-fund --no-audit)
 
 npx streamdeck pack com.ewels.deckcal.sdPlugin --force
@@ -96,6 +100,12 @@ Clean up before going back to `npm run watch` — the staged `package.json` + in
 ```sh
 rm -rf com.ewels.deckcal.sdPlugin/node_modules com.ewels.deckcal.sdPlugin/package.json com.ewels.deckcal.streamDeckPlugin
 npm run build   # rollup re-emits the {"type":"module"} package.json
+
+# `streamdeck pack` rewrites manifest.json in its own formatting (expanded
+# arrays, no trailing newline). Either of these restores it: the prettier and
+# end-of-file-fixer hooks reformat it back byte-for-byte, so the churn is
+# self-healing and manifest.json must NOT be added to .prettierignore.
+git checkout -- com.ewels.deckcal.sdPlugin/manifest.json   # or: prek run --all-files
 ```
 
 ## Architecture
