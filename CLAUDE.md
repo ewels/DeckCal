@@ -204,9 +204,9 @@ Two pages: `docs/index.html` and `docs/privacy/index.html`. These are now the
 canonical ones: the OAuth client's homepage and privacy policy URLs point at
 <https://ewels.github.io/DeckCal/> and
 <https://ewels.github.io/DeckCal/privacy/>, and `manifest.json`'s `URL` and
-`README.md` both link the homepage. phil.ewels.co.uk/projects/deckcal/ still
-carries a copy of the same privacy text; keep the two in sync if either
-changes, or retire the copy there.
+`README.md` both link the homepage. The old copy of the privacy text under
+phil.ewels.co.uk has been removed, so `docs/privacy/index.html` is the only
+version.
 
 Note for the Google side: an OAuth client's URLs must sit under an authorised
 domain, so `ewels.github.io` has to be added to the consent screen's authorised

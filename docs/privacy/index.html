@@ -28,7 +28,7 @@
 
       <article class="prose">
         <h1>DeckCal Privacy Policy</h1>
-        <p class="subtle"><strong>Effective date:</strong> 8 June 2026</p>
+        <p class="subtle"><strong>Effective date:</strong> 14 August 2026</p>
 
         <p>
           DeckCal is an open source
@@ -73,14 +73,72 @@
         <h2>How the data is stored and handled</h2>
         <p>
           DeckCal has no backend. There is no server operated by the developer.
-          OAuth tokens and the calendar event data the plugin fetches are stored
-          locally on your own computer, inside Stream Deck's plugin settings. No
-          data is ever sent to, or stored on, any server operated by the
-          developer.
+          OAuth tokens are stored locally on your own computer, inside Stream
+          Deck's plugin settings, and the calendar events the plugin fetches are
+          kept only in the plugin's memory while it runs. No data is ever sent
+          to, or stored on, any server operated by the developer.
         </p>
         <p>
           Your data is not shared with any third parties. The plugin contains no
           analytics and no tracking.
+        </p>
+
+        <h2>How the data is protected</h2>
+        <p>
+          Calendar events are sensitive data, and DeckCal is built to keep the
+          handling of them as narrow as possible.
+        </p>
+        <ul>
+          <li>
+            <strong>In transit:</strong> all communication with Google is over
+            HTTPS (TLS), using Google's official
+            <code>@googleapis/calendar</code> and
+            <code>google-auth-library</code> client libraries. The plugin sends
+            calendar data nowhere else.
+          </li>
+          <li>
+            <strong>At rest:</strong> OAuth tokens are written only to Stream
+            Deck's own settings storage in your user account on your computer,
+            protected by your operating system's user account and file
+            permissions, and by full disk encryption if you have it enabled
+            (FileVault on macOS, BitLocker on Windows). Fetched calendar events
+            are held in memory only and are discarded when the plugin stops. The
+            one exception is the opaque event ID of an alert you have dismissed,
+            which is kept locally so the same meeting does not alert you twice,
+            and is deleted as soon as that event leaves the plugin's time
+            window.
+          </li>
+          <li>
+            <strong>Access control:</strong> only the read-only calendar scope
+            is requested, so the plugin cannot create, change, or delete
+            anything in your Google account. Sign-in uses the OAuth 2.0
+            authorization code flow with PKCE against a short-lived local
+            loopback listener, so your Google password is never seen by the
+            plugin and the authorization code cannot be intercepted and reused.
+            Only you, signed in to your own computer, can see the data on your
+            Stream Deck.
+          </li>
+          <li>
+            <strong>Minimisation:</strong> the plugin requests only events
+            inside a short window around the present time, and only from the
+            calendars you explicitly select. Its local log file records event
+            counts and error messages; no event titles, attendees, or meeting
+            links are ever written to it.
+          </li>
+          <li>
+            <strong>Development practices:</strong> DeckCal is open source, so
+            all of the above is publicly auditable at
+            <a href="https://github.com/ewels/DeckCal"
+              >github.com/ewels/DeckCal</a
+            >. Dependencies are kept up to date and monitored for security
+            advisories, and every change runs through automated linting, type
+            checking, and tests before release.
+          </li>
+        </ul>
+        <p>
+          No system is perfectly secure. If you believe you have found a
+          security issue in DeckCal, please report it using the contact details
+          below rather than opening a public issue.
         </p>
 
         <h2>Data retention, deletion, and revoking access</h2>
