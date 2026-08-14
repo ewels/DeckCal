@@ -194,25 +194,24 @@ git checkout -- com.ewels.deckcal.sdPlugin/manifest.json   # or: prek run --all-
 ## Website
 
 `docs/` is a GitHub Pages site served straight off `main` (Settings → Pages →
-"Deploy from a branch", branch `main`, folder `/docs`), at
-<https://ewels.github.io/DeckCal/>. It exists because Google's OAuth branding
-review requires the app name on the consent screen to match the app name on
-the homepage the OAuth client points at, and a page inside phil.ewels.co.uk
-reads as that site's name rather than DeckCal's.
+"Deploy from a branch", branch `main`, folder `/docs`), on the custom domain
+<https://deckcal.ewels.co.uk/> (`docs/CNAME`). It exists because Google's OAuth
+branding review requires the app name on the consent screen to match the app
+name on the homepage the OAuth client points at, and a page inside
+phil.ewels.co.uk reads as that site's name rather than DeckCal's.
 
-Two pages: `docs/index.html` and `docs/privacy/index.html`. These are now the
-canonical ones: the OAuth client's homepage and privacy policy URLs point at
-<https://ewels.github.io/DeckCal/> and
-<https://ewels.github.io/DeckCal/privacy/>, and `manifest.json`'s `URL` and
-`README.md` both link the homepage. The old copy of the privacy text under
-phil.ewels.co.uk has been removed, so `docs/privacy/index.html` is the only
-version.
+Two pages: `docs/index.html` and `docs/privacy/index.html`. The OAuth client's
+homepage and privacy policy URLs point at <https://deckcal.ewels.co.uk/> and
+<https://deckcal.ewels.co.uk/privacy/>, and `manifest.json`'s `URL` and
+`README.md` both link the homepage. Every DeckCal URL in the repo must use
+`deckcal.ewels.co.uk`: `ewels.github.io/DeckCal/` still resolves but 301s to
+the custom domain, and Google's brand review rejects a homepage or privacy
+policy URL that redirects.
 
 Note for the Google side: an OAuth client's URLs must sit under an authorised
-domain, so `ewels.github.io` has to be added to the consent screen's authorised
-domain list, which in turn needs the site verified in Google Search Console.
-`github.io` is on the public suffix list, so `ewels.github.io` verifies as its
-own site.
+domain, so `ewels.co.uk` has to be in the consent screen's authorised domain
+list, which in turn needs it verified in Google Search Console (verifying
+`ewels.co.uk` covers the `deckcal.` subdomain).
 
 Deliberately hand-written HTML + CSS with **no build step and no JavaScript**,
 so a `git push` publishes it. It borrows the layout idea of phil.ewels.co.uk

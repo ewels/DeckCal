@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://ewels.github.io/DeckCal/">ewels.github.io/DeckCal</a>
+  <a href="https://deckcal.ewels.co.uk/">deckcal.ewels.co.uk</a>
 </p>
 
 A [Stream Deck](https://www.elgato.com/stream-deck) plugin that turns a key
