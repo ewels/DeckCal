@@ -1,7 +1,7 @@
 {
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "Name": "DeckCal",
-  "Version": "0.1.0.0",
+  "Version": "1.0.0.0",
   "Author": "Phil Ewels",
   "URL": "https://deckcal.ewels.co.uk/",
   "SupportURL": "https://github.com/ewels/deckcal/issues",

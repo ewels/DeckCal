@@ -19,12 +19,13 @@ const requiredEnv = [
   "DECKCAL_GOOGLE_CLIENT_SECRET",
 ];
 for (const key of requiredEnv) {
-  if (!process.env[key]) {
-    console.warn(
-      `[build] ${key} is not set. The packaged plugin will throw on sign-in. ` +
-        `See README for setup.`,
-    );
-  }
+  if (process.env[key]) continue;
+  const message =
+    `[build] ${key} is not set. The packaged plugin will throw on sign-in. ` +
+    `See README for setup.`;
+  // Throw error if a real realease on CI
+  if (process.env.CI) throw new Error(message);
+  console.warn(message);
 }
 
 /**

@@ -45,91 +45,21 @@ event detail page.
 
 ## Actions
 
-|                                                                                         | Action                | What it shows                                                                                          |
-| :-------------------------------------------------------------------------------------: | --------------------- | ------------------------------------------------------------------------------------------------------ |
-| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | The ongoing meeting if you're in one, otherwise the next upcoming meeting. The "do everything" action. |
-| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/upcoming/key.svg" alt="" width="56">  | **Upcoming meeting**  | Only the next upcoming meeting. Ignores meetings already in progress.                                  |
-|  <img src="com.ewels.deckcal.sdPlugin/imgs/actions/ongoing/key.svg" alt="" width="56">  | **Ongoing meeting**   | Only the meeting you're currently in. Idle when nothing is happening.                                  |
-|   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | Blank tile that only lights up the moment a meeting starts. Short press dismisses, long press joins.   |
+|                                                                                         | Action                | What it shows                                                                                                                         |
+| :-------------------------------------------------------------------------------------: | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | The ongoing meeting if you're in one, otherwise the next upcoming meeting. Shows yellow background block. The "do everything" action. |
+|   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | Blank tile that only shows the yellow bar and lights up the moment a meeting starts. Good for making a larger imminent-meeting bar.   |
+| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/upcoming/key.svg" alt="" width="56">  | **Upcoming meeting**  | Only the next upcoming meeting. Ignores meetings already in progress.                                                                 |
+|  <img src="com.ewels.deckcal.sdPlugin/imgs/actions/ongoing/key.svg" alt="" width="56">  | **Ongoing meeting**   | Only the meeting you're currently in. Idle when nothing is happening.                                                                 |
 
 ## Installation
-
-> [!WARNING]
->
-> **DeckCal is waiting on Google's OAuth verification review.** Until that
-> clears, Google only lets people on the app's test-user allowlist sign in,
-> so the plugin cannot be installed and used yet.
->
-> If you would like to try it in the meantime, see the "Building from source"
-> instructions and provide your own Google API keys.
 
 Download the latest `com.ewels.deckcal.streamDeckPlugin` from the
 [releases page](https://github.com/ewels/deckcal/releases), double-click to
 install in Stream Deck, drag **Meeting countdown** onto a key, click the
 gear icon, and **Sign in with Google**.
 
-## Building from source
-
-```sh
-npm install
-cp .env.local.example .env.local       # then paste your own OAuth values
-npm run build                          # rollup substitutes env values at build time
-```
-
-You need your own Google OAuth Desktop client to build a working binary.
-One-time setup (~5 min):
-
-1. Go to <https://console.cloud.google.com/> and create or pick a project.
-2. Enable the **Google Calendar API** under **APIs & Services → Library**.
-3. Open **Google Auth Platform → Branding**. Configure as an _External_
-   app, app name `DeckCal`, user support + developer contact email = yours.
-4. Open **Google Auth Platform → Audience**. Add yourself as a **Test
-   user**. Publishing status stays **Testing**.
-5. Open **Google Auth Platform → Clients → Create client**. Type:
-   **Desktop app**. After **Create**, copy both the **Client ID** and the
-   **Client secret**.
-6. Paste them into `.env.local` as `DECKCAL_GOOGLE_CLIENT_ID` and
-   `DECKCAL_GOOGLE_CLIENT_SECRET`.
-
-`.env.local` is gitignored. The repo never contains real credentials.
-Release CI passes them as environment variables to the build step.
-
-### Build steps
-
-```sh
-npm install
-npm run build         # one-off rollup build → com.ewels.deckcal.sdPlugin/bin/plugin.js
-npm run watch         # rebuild on save, restart the plugin in Stream Deck
-npm test              # run the unit tests
-npm run test:watch    # re-run tests on save
-```
-
-Tests are [Vitest](https://vitest.dev) suites living beside the code they
-cover (`src/**/*.test.ts`), covering settings parsing, event selection,
-conferencing detection and tile rendering.
-
-Linting, formatting and type-checking all run through
-[prek](https://github.com/j178/prek), which installs its own pinned copies of
-biome and prettier:
-
-```sh
-prek install          # install the git hook (once)
-prek run --all-files  # lint, format and type-check the whole repo
-```
-
-Run `npm ci` first on a clean checkout: the type-check hook uses the project's
-own `node_modules`.
-
-A code change does not appear in Stream Deck until the plugin process is
-restarted (`npm run watch` does this automatically; otherwise run
-`streamdeck restart com.ewels.deckcal`).
-
-The plugin logs to a rotating file inside the plugin folder, which is the
-first place to look when something misbehaves:
-
-```sh
-tail -f com.ewels.deckcal.sdPlugin/logs/com.ewels.deckcal.0.log
-```
+See [contribution guidelines](CONTRIBUTING.md) if you want to build from source.
 
 ## Property inspector
 
