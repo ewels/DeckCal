@@ -9,8 +9,6 @@ A Stream Deck plugin (`com.ewels.deckcal`, "DeckCal") that turns a key into a li
 - `com.ewels.deckcal.countdown` — "Meeting countdown": the full tile. Its `mode` setting (the PI's "Show" dropdown) picks `combined` (ongoing if you're in one, otherwise next upcoming; the default), `upcoming` (ignores ongoing) or `ongoing` (idle otherwise).
 - `com.ewels.deckcal.alert` — "Meeting alert": no text, just the yellow run-up fill, the green in-meeting bar and the meeting-start flash.
 
-`com.ewels.deckcal.upcoming` and `com.ewels.deckcal.ongoing` are **retired**: still in the manifest with `"VisibleInActionsList": false`, and still registered (`UpcomingAction` / `OngoingAction`), purely so keys placed before v1.1.0 keep working. They differ from `CountdownAction` only in the `defaultMode` stamped into a key's settings the first time it appears, after which they behave identically. Do not add features to them; delete them if breaking those keys ever becomes acceptable.
-
 The visible keys auto-update every second from a 60-second Google Calendar poll, with progress bars, a yellow imminent-fill in the last 5 minutes, a full-tile 50%-opacity green fill while a meeting is ongoing (both sweeping across adjacent keys as one band when they resolve to the same meeting), a yellow flash on meeting start (auto-dismissed after `autoAckAfterMinutes`, default 5), and a footer band for OOO / focus overlaps.
 
 ## Commands
@@ -239,16 +237,15 @@ biome owns JS/TS, prettier owns everything else.
 
 ```
 src/
-  plugin.ts             bootstrap: registers the 2 live + 2 retired actions + connect()
+  plugin.ts             bootstrap: registers the 2 actions + connect()
   settings.ts           CountdownSettings, GlobalSettings, DEFAULTS, SelectionMode,
                         resolveMode/resolveProvider/resolveNextMeeting
   actions/
-    countdown.ts        BaseCountdownAction + CountdownAction, AlertAction and
-                        the two retired subclasses — shared key lifecycle,
-                        state-driven press dispatch, PI bridge. Subclasses
-                        differ only in `renderVariant` (alert) and
-                        `defaultMode` (retired actions); the live selection
-                        mode is `settings.mode`, read via `resolveMode()`.
+    countdown.ts        BaseCountdownAction + CountdownAction and AlertAction —
+                        shared key lifecycle, state-driven press dispatch, PI
+                        bridge. The two differ only in `renderVariant`; the
+                        selection mode is `settings.mode`, read via
+                        `resolveMode()`.
   calendar/
     auth.ts             OAuth 2.0 PKCE loopback flow, token persistence in global settings
     client.ts           @googleapis/calendar wrapper: listCalendars, listEvents, normalize → CalendarEvent
@@ -297,7 +294,7 @@ Stream Deck spawns `node bin/plugin.js`; the SDK translates websocket events int
 
 Flat keys (sdpi-components binds via flat `setting="X"` paths). `resolveProvider()` and `resolveNextMeeting()` in `src/settings.ts` reassemble structured handlers from the flat fields. Number fields stored by sdpi-textfield arrive as strings, so always re-parse via `toNumber(value, fallback)`.
 
-`mode` is the `SelectionMode` the key runs in. It is stamped into settings on first appear (from the action's `defaultMode`) so the PI always reflects what the key is actually doing, and read at render / press time via `resolveMode()`, which falls back to `combined` for anything unrecognised.
+`mode` is the `SelectionMode` the key runs in, set by the PI's "Show" dropdown and read at render / press time via `resolveMode()`, which falls back to `combined` for undefined (a key nobody has configured) and for anything unrecognised.
 
 `account` is a structured `{ sub, email }` set by the plugin after OAuth completes; the PI displays the email but does not edit this field directly. OAuth tokens themselves live in global settings under `accounts[sub]`, so they survive button reassignment and aren't duplicated per key.
 

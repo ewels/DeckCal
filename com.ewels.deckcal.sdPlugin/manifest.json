@@ -22,38 +22,6 @@
       ]
     },
     {
-      "Name": "Upcoming meeting (retired)",
-      "UUID": "com.ewels.deckcal.upcoming",
-      "Icon": "imgs/actions/upcoming/icon",
-      "Tooltip": "Retired: use Meeting countdown and set Show to \"Next meeting only\".",
-      "VisibleInActionsList": false,
-      "PropertyInspectorPath": "ui/countdown.html",
-      "Controllers": ["Keypad"],
-      "States": [
-        {
-          "Image": "imgs/actions/upcoming/key",
-          "TitleAlignment": "middle",
-          "ShowTitle": false
-        }
-      ]
-    },
-    {
-      "Name": "Ongoing meeting (retired)",
-      "UUID": "com.ewels.deckcal.ongoing",
-      "Icon": "imgs/actions/ongoing/icon",
-      "Tooltip": "Retired: use Meeting countdown and set Show to \"Current meeting only\".",
-      "VisibleInActionsList": false,
-      "PropertyInspectorPath": "ui/countdown.html",
-      "Controllers": ["Keypad"],
-      "States": [
-        {
-          "Image": "imgs/actions/ongoing/key",
-          "TitleAlignment": "middle",
-          "ShowTitle": false
-        }
-      ]
-    },
-    {
       "Name": "Meeting alert",
       "UUID": "com.ewels.deckcal.alert",
       "Icon": "imgs/actions/alert/icon",

@@ -2,12 +2,12 @@
 
 ## v1.1.0 (unreleased)
 
-- The **Upcoming meeting** and **Ongoing meeting** actions are retired.
-  **Meeting countdown** now has a **Show** setting covering the same three
+- **Breaking:** the **Upcoming meeting** and **Ongoing meeting** actions are
+  gone. **Meeting countdown** has a **Show** setting covering the same three
   jobs: the current meeting falling back to the next one (default), the next
-  one only, or the current one only. Keys already placed on the retired
-  actions keep working and pick up the matching setting, but the two actions
-  no longer appear in the Stream Deck actions list.
+  one only, or the current one only. A key still sitting on one of the removed
+  actions will not load; replace it with **Meeting countdown** and pick the
+  matching **Show** option.
 - The multi-key sweep is now described where people actually see it: the
   plugin description, the README opening, and the top of the website, rather
   than in a subsection halfway down. The green in-meeting band is part of that

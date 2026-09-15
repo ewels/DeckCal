@@ -72,10 +72,6 @@ follows:
 - **Next meeting only**: ignores a meeting that is already under way.
 - **Current meeting only**: idle when you are not in a meeting.
 
-Older keys placed as the separate **Upcoming meeting** and **Ongoing meeting**
-actions keep working and now show that setting instead. Those two actions are
-retired, so they no longer appear in the actions list.
-
 ## Installation
 
 Download the latest `com.ewels.deckcal.streamDeckPlugin` from the
