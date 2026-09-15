@@ -45,10 +45,10 @@ the text and which are only the background-colour bar.
 
 ## Actions
 
-|                                                                                         | Action                | What it shows                                                                                            |
-| :-------------------------------------------------------------------------------------: | --------------------- | -------------------------------------------------------------------------------------------------------- |
-| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | Countdown text, progress bars, press to join. Start here.                                                |
-|   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | The same bars, no text, blank until a meeting is close. Widens the band without repeating the countdown. |
+|                                                                                         | Action                | What it shows                                                                                                |
+| :-------------------------------------------------------------------------------------: | --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | Countdown text, meeting title, progress bars, press to join.                                                 |
+|   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | The same bars but without any text: blank until a meeting is close. Used to make the countdown sweep larger. |
 
 **Meeting countdown** has a **Show** setting that picks which meetings it
 follows:
