@@ -1,33 +1,15 @@
 # Changelog
 
-## v1.1.0 (unreleased)
+## v1.1.0 (2026-09-16)
 
 - **Breaking:** the **Upcoming meeting** and **Ongoing meeting** actions are
-  gone. **Meeting countdown** has a **Show** setting covering the same three
-  jobs: the current meeting falling back to the next one (default), the next
-  one only, or the current one only. A key still sitting on one of the removed
-  actions will not load; replace it with **Meeting countdown** and pick the
-  matching **Show** option.
-- The multi-key sweep is now described where people actually see it: the
-  plugin description, the README opening, and the top of the website, rather
-  than in a subsection halfway down. The green in-meeting band is part of that
-  description now too, alongside the yellow run-up band.
-- The settings panel no longer pulls its UI components from a CDN. They ship
-  with the plugin, so the panel opens with no internet connection and does not
-  depend on a third party staying up.
-- A failed key press now flashes the Stream Deck alert icon, as Elgato's
-  guidelines require, instead of failing silently: a meeting with no link to
-  open, a URL DeckCal will not launch, or a sign in that did not complete.
-- A missing app no longer takes the plugin process down. Launching an app that
-  is not installed raised an unhandled process error; it is logged now.
-- The action list icons follow Elgato's icon guidelines: monochrome white on
-  a transparent background, SVG only. The yellow bell, amber arrow and green
-  play triangle were the only colour left in them. The key images are SVG only
-  as well, which also fixes the alert tile's rasters being twice the size
-  Elgato specifies.
-- Clearer wording for **Meeting alert** everywhere it is described: it also
-  carries the yellow run-up fill and the green in-meeting bar, not just the
-  flash as a meeting starts.
+  gone. **Meeting countdown** has a **Show** setting that does the same three
+  jobs.
+- When a press cannot do what it is meant to, the key flashes the Stream Deck
+  alert icon instead of looking like nothing happened.
+- The settings panel opens with no internet connection. Previously, part of its interface
+  was fetched from the web on open.
+- Made icons plain-white to match Elgato guidelines.
 
 ## v1.0.0 (2026-08-17)
 

@@ -12,33 +12,32 @@ DeckCal
 
 Between 250 and 1,500 characters. The first 250 are taken as the search engine
 description, so the opening block stays unformatted, and the bullets come
-after. Current draft is 1,443 characters.
+after. Current draft is 1,251 characters.
 
 ---
 
 DeckCal turns a Stream Deck key into a live countdown to your next Google
 Calendar meeting. A blue bar closes the gap to the meeting, a yellow fill
 creeps across the key over the last few minutes, and a green bar tracks the
-time left once it is under way. Give it more than one key and those fills stop
-being a key each: they sweep across the whole group as a single band, so a
-meeting about to start is impossible to miss from the other side of the room.
+time left once it is under way. Give it more than one key and those fills span
+the whole group as a single band, turning a row of keys into one countdown bar
+you can read from across the room.
 
 - Two actions. Meeting countdown carries the text and the bars, and follows
-  the meeting you are in, the next one, or whichever is most relevant. Meeting
-  alert is bars only, for widening the band without repeating the text.
+  the meeting you are in, the next one, or whichever matters most. Meeting
+  alert is bars only, for widening the band.
 - Short press joins the call in Google Meet, Zoom or Microsoft Teams, in your
-  browser or in an app you choose. Long press opens the meeting's first
-  attached document.
-- The key flashes when a meeting starts, until you press it or it times out.
+  browser or an app you choose. Long press opens the first attached document.
+- The key flashes as a meeting starts, until you press it or it times out.
 - Out of office and focus time show as a coloured footer band, so the next
   real meeting stays visible behind them.
-- Sign in to more than one Google account and tick exactly which calendars
-  each key follows.
-- Read only calendar access. Your calendar data and sign in tokens stay on
-  your computer.
+- Sign in to more than one Google account and tick which calendars each key
+  follows.
+- Read only access. Your calendar data and sign in tokens stay on your
+  computer.
 
 Requirements: Stream Deck 7.1 or later, macOS 12 or Windows 10 and above, and
-a Google account. Free, with no subscription and no account to create.
+a Google account. Free, no subscription.
 
 ---
 

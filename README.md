@@ -11,35 +11,27 @@
 
 A [Stream Deck](https://www.elgato.com/stream-deck) plugin that turns one key,
 or a whole row of them, into a live indicator for your Google Calendar. The key
-shows a countdown to the next meeting (or remaining time in the current one),
-with a progress bar across the top, a yellow fill in the last few minutes
-before it starts, and a footer band for out-of-office or focus-time overlaps.
-Press the key to join the current meeting, open the meeting URL in a chosen
-app, or open the next meeting's notes doc.
-
-Give it more than one key and those fills stop being a key each: they sweep
-across the whole row as a single band, so a meeting about to start is
-impossible to miss from anywhere in the room.
+counts down to your next meeting, or the time left in the one you are in, with
+a progress bar across the top and a yellow fill over the last few minutes.
+Press it to join the meeting, or to open the next meeting's notes.
 
 ## Multi-key sweep
 
 https://github.com/user-attachments/assets/42d28e97-5eb9-4187-94fb-ffbc773e179a
 
-Put two or more DeckCal keys next to each other and they stop behaving like
-separate keys. Both fills (the yellow one in the run-up to a meeting and the
-green one tracking the meeting you are in) are drawn as a single band across
-the whole group, each key painting its own slice of it. Five keys in a row
-give you a countdown bar the width of the deck. Stack them as well and the bar
-gets taller: any block of touching keys joins in, not just a single row.
+Two or more DeckCal keys side by side draw one band between them instead of a
+bar each. The yellow run-up fill and the green in-meeting fill span the whole
+group, each key painting its own slice. Five in a row give you a countdown bar
+the width of the deck. Stack them and it gets taller, because any block of
+touching keys joins in.
 
-Mix **Meeting countdown** and **Meeting alert** keys to choose which of them
-carry the text and which are pure bar.
+Mix **Meeting countdown** and **Meeting alert** keys to pick which ones carry
+the text and which are pure bar.
 
-There is nothing to configure. Keys join a band when they touch, sit on the
-same deck, and are counting down to the same meeting, so it forms and
-dissolves on its own. The one thing to keep in step is **Imminent fill (min)**:
-keys that disagree about when the yellow starts are counting different things,
-so they stay separate.
+Nothing to configure: keys join a band when they touch, sit on the same deck
+and count down to the same meeting. Keep **Imminent fill (min)** in step
+across them, though. Keys that disagree about when the yellow starts are
+counting different things, so they stay apart.
 
 ## Features
 
@@ -60,10 +52,10 @@ event detail page.
 
 ## Actions
 
-|                                                                                         | Action                | What it shows                                                                                                                                                     |
-| :-------------------------------------------------------------------------------------: | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | The countdown, the progress bars and the text. The "do everything" action.                                                                                        |
-|   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | The same bars with no text: yellow as a meeting approaches, green while it runs, flashing as it starts. Blank the rest of the time. Good for widening those bars. |
+|                                                                                         | Action                | What it shows                                                                                            |
+| :-------------------------------------------------------------------------------------: | --------------------- | -------------------------------------------------------------------------------------------------------- |
+| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | Countdown text, progress bars, press to join. Start here.                                                |
+|   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | The same bars, no text, blank until a meeting is close. Widens the band without repeating the countdown. |
 
 **Meeting countdown** has a **Show** setting that picks which meetings it
 follows:
@@ -86,7 +78,7 @@ See [contribution guidelines](CONTRIBUTING.md) if you want to build from source.
 In the Stream Deck app, drag the "Meeting countdown" action onto a key, then
 click the gear icon to open settings:
 
-- **Show**: Which meetings this key follows: the current one falling back to
+- **Show**: which meetings this key follows. The current one falling back to
   the next (default), only the next, or only the current.
 - **Accounts**: Sign in with one or more Google accounts. Add additional
   ones with **Add another account**.

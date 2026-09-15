@@ -25,7 +25,7 @@
       "Name": "Meeting alert",
       "UUID": "com.ewels.deckcal.alert",
       "Icon": "imgs/actions/alert/icon",
-      "Tooltip": "Bare tile: no text, just the yellow fill before a meeting, the green bar during it, and a flash as it starts. Place next to a countdown key for a wider bar.",
+      "Tooltip": "The same bars with no text: yellow before a meeting, green during it, flashing as it starts. Place next to a countdown key to widen the band.",
       "PropertyInspectorPath": "ui/countdown.html",
       "Controllers": ["Keypad"],
       "States": [
