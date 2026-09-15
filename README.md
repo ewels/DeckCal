@@ -15,24 +15,6 @@ counts down to your next meeting, or the time left in the one you are in, with
 a progress bar across the top and a yellow fill over the last few minutes.
 Press it to join the meeting, or to open the next meeting's notes.
 
-## Multi-key sweep
-
-https://github.com/user-attachments/assets/42d28e97-5eb9-4187-94fb-ffbc773e179a
-
-Two or more DeckCal keys side by side draw one band between them instead of a
-bar each. The yellow run-up fill and the green in-meeting fill span the whole
-group, each key painting its own slice. Five in a row give you a countdown bar
-the width of the deck. Stack them and it gets taller, because any block of
-touching keys joins in.
-
-Mix **Meeting countdown** and **Meeting alert** keys to pick which ones carry
-the text and which are pure bar.
-
-Nothing to configure: keys join a band when they touch, sit on the same deck
-and count down to the same meeting. Keep **Imminent fill (min)** in step
-across them, though. Keys that disagree about when the yellow starts are
-counting different things, so they stay apart.
-
 ## Features
 
 |                                                                   |                                                                                                      |
@@ -49,6 +31,17 @@ counting different things, so they stay apart.
 Short press clears the flashing `NOW` and another joins the current meeting (Google Meet, Zoom, or Teams).
 Long press opens the meeting's first attached doc, falling back to the
 event detail page.
+
+## Multi-key sweep
+
+https://github.com/user-attachments/assets/42d28e97-5eb9-4187-94fb-ffbc773e179a
+
+If you place two or more DeckCal keys side by side with their edges touching
+(vertically and / or horizontally) will show the yellow run-up bar and
+the green in-meeting bars spanning the whole group.
+
+Mix **Meeting countdown** and **Meeting alert** keys to pick which ones carry
+the text and which are only the background-colour bar.
 
 ## Actions
 
