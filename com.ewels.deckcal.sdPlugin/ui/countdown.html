@@ -3,7 +3,9 @@
   <head>
     <title>DeckCal Settings</title>
     <meta charset="utf-8" />
-    <script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+    <!-- Vendored, not CDN-loaded: the panel has to render with no internet,
+         and a third party going down should not break the settings UI. -->
+    <script src="sdpi-components.js"></script>
     <style>
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -154,6 +156,16 @@
   </head>
 
   <body>
+    <div data-show-variant="combined,upcoming,ongoing">
+      <div class="section">Show</div>
+      <sdpi-item label="This key">
+        <sdpi-select setting="mode" default="combined">
+          <option value="combined">Current meeting, else the next one</option>
+          <option value="upcoming">Next meeting only</option>
+          <option value="ongoing">Current meeting only</option>
+        </sdpi-select>
+      </sdpi-item>
+    </div>
     <div id="variantBanner" class="variant-banner hidden"></div>
     <div class="section">Accounts</div>
     <div id="accountList"></div>
@@ -164,9 +176,8 @@
     </div>
     <div id="authError" class="error hidden"></div>
     <small class="help">
-      DeckCal reads your Google Calendar (read only) to show your next meeting
-      on this key. Nothing is sent anywhere: your calendar data and sign in
-      tokens stay on this computer. See the
+      Read only access. Your calendar data and sign in tokens stay on this
+      computer. See the
       <a href="https://deckcal.ewels.co.uk/privacy/" target="_blank"
         >privacy policy</a
       >.
@@ -261,10 +272,8 @@
       <div data-show-variant="combined,ongoing,alert">
         <div class="section">Join meeting press</div>
         <small class="help">
-          For ongoing meetings, choose whether to open the meeting URL in your
-          browser or hand it off to a desktop app. On macOS the app field
-          accepts a name or full path (passed to <code>open -a</code>); on
-          Windows, the full executable path or registered app name.
+          Open the meeting in a browser, or in an app: a name or full path on
+          macOS, an executable path or registered app name on Windows.
         </small>
 
         <sdpi-item label="Google Meet">

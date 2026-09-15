@@ -9,13 +9,11 @@
   <a href="https://deckcal.ewels.co.uk/">deckcal.ewels.co.uk</a>
 </p>
 
-A [Stream Deck](https://www.elgato.com/stream-deck) plugin that turns a key
-into a live indicator for your Google Calendar. The key shows a countdown to
-the next meeting (or remaining time in the current one), with a progress bar
-across the top, a yellow fill in the last few minutes before it starts, and a
-footer band for out-of-office or focus-time overlaps. Press the key to join
-the current meeting, open the meeting URL in a chosen app, or open the next
-meeting's notes doc.
+A [Stream Deck](https://www.elgato.com/stream-deck) plugin that turns one key,
+or a whole row of them, into a live indicator for your Google Calendar. The key
+counts down to your next meeting, or the time left in the one you are in, with
+a progress bar across the top and a yellow fill over the last few minutes.
+Press it to join the meeting, or to open the next meeting's notes.
 
 ## Features
 
@@ -30,27 +28,34 @@ meeting's notes doc.
 |    <img src="docs/examples/focus_time.png" alt="" width="120">    | **Focus time.**<br>Purple footer band, so you can still see the next regular meeting.                |
 |  <img src="docs/examples/out_of_office.png" alt="" width="120">   | **Out of office.**<br>Grey footer band so you can see the next meeting.                              |
 
-### Multi-key sweep
-
-https://github.com/user-attachments/assets/42d28e97-5eb9-4187-94fb-ffbc773e179a
-
-Place two or more **Meeting countdown** (or **Upcoming meeting**) keys next
-to each other and the yellow imminent-fill bar sweeps across them as a
-single band in the last 5 minutes before a meeting. A much more visible cue
-than a single key can give on its own.
-
 Short press clears the flashing `NOW` and another joins the current meeting (Google Meet, Zoom, or Teams).
 Long press opens the meeting's first attached doc, falling back to the
 event detail page.
 
+## Multi-key sweep
+
+https://github.com/user-attachments/assets/42d28e97-5eb9-4187-94fb-ffbc773e179a
+
+If you place two or more DeckCal keys side by side with their edges touching
+(vertically and / or horizontally) will show the yellow run-up bar and
+the green in-meeting bars spanning the whole group.
+
+Mix **Meeting countdown** and **Meeting alert** keys to pick which ones carry
+the text and which are only the background-colour bar.
+
 ## Actions
 
-|                                                                                         | Action                | What it shows                                                                                                                         |
-| :-------------------------------------------------------------------------------------: | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | The ongoing meeting if you're in one, otherwise the next upcoming meeting. Shows yellow background block. The "do everything" action. |
-|   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | Blank tile that only shows the yellow bar and lights up the moment a meeting starts. Good for making a larger imminent-meeting bar.   |
-| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/upcoming/key.svg" alt="" width="56">  | **Upcoming meeting**  | Only the next upcoming meeting. Ignores meetings already in progress.                                                                 |
-|  <img src="com.ewels.deckcal.sdPlugin/imgs/actions/ongoing/key.svg" alt="" width="56">  | **Ongoing meeting**   | Only the meeting you're currently in. Idle when nothing is happening.                                                                 |
+|                                                                                         | Action                | What it shows                                                                                                |
+| :-------------------------------------------------------------------------------------: | --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| <img src="com.ewels.deckcal.sdPlugin/imgs/actions/countdown/key.svg" alt="" width="56"> | **Meeting countdown** | Countdown text, meeting title, progress bars, press to join.                                                 |
+|   <img src="com.ewels.deckcal.sdPlugin/imgs/actions/alert/key.svg" alt="" width="56">   | **Meeting alert**     | The same bars but without any text: blank until a meeting is close. Used to make the countdown sweep larger. |
+
+**Meeting countdown** has a **Show** setting that picks which meetings it
+follows:
+
+- **Current meeting, else the next one** (default): whichever is most relevant.
+- **Next meeting only**: ignores a meeting that is already under way.
+- **Current meeting only**: idle when you are not in a meeting.
 
 ## Installation
 
@@ -66,6 +71,8 @@ See [contribution guidelines](CONTRIBUTING.md) if you want to build from source.
 In the Stream Deck app, drag the "Meeting countdown" action onto a key, then
 click the gear icon to open settings:
 
+- **Show**: which meetings this key follows. The current one falling back to
+  the next (default), only the next, or only the current.
 - **Accounts**: Sign in with one or more Google accounts. Add additional
   ones with **Add another account**.
 - **Calendars** :Tick which calendars feed the countdown, grouped per

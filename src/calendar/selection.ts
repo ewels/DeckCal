@@ -2,6 +2,7 @@ import {
   type CountdownSettings,
   DEFAULTS,
   optionalNumber,
+  type SelectionMode,
   type SpecialEventMode,
   toNumber,
 } from "../settings";
@@ -14,7 +15,7 @@ export type FooterBand =
 
 export const FOOTER_BAND_NONE: FooterBand = { kind: "none" };
 
-export type SelectionMode = "combined" | "upcoming" | "ongoing";
+export type { SelectionMode };
 
 export type SelectionResult =
   | { mode: "idle"; footerBand: FooterBand }

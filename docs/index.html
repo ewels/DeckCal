@@ -6,7 +6,7 @@
     <title>DeckCal</title>
     <meta
       name="description"
-      content="DeckCal is a Stream Deck plugin that turns a key into a live countdown to your next Google Calendar meeting, with a press to join it."
+      content="DeckCal is a Stream Deck plugin that turns one key, or a whole block of them, into a live countdown to your next Google Calendar meeting, with a press to join it."
     />
     <link rel="icon" href="app-icon.svg" type="image/svg+xml" />
     <link rel="canonical" href="https://deckcal.ewels.co.uk/" />
@@ -14,7 +14,7 @@
     <meta property="og:title" content="DeckCal" />
     <meta
       property="og:description"
-      content="A Stream Deck plugin that turns a key into a live countdown to your next Google Calendar meeting."
+      content="A Stream Deck plugin that turns one key, or a whole block of them, into a live countdown to your next Google Calendar meeting."
     />
     <meta property="og:url" content="https://deckcal.ewels.co.uk/" />
     <meta
@@ -38,8 +38,9 @@
           />
         </picture>
         <p class="hero__tagline">
-          A Stream Deck plugin that turns a key into a live countdown to your
-          next Google Calendar meeting, with a press to join it.
+          A Stream Deck plugin that turns one key, or a whole block of them,
+          into a live countdown to your next Google Calendar meeting, with a
+          press to join it.
         </p>
         <div class="buttons">
           <a
@@ -68,9 +69,40 @@
         <p>
           A key shows a countdown to your next meeting, or the time remaining in
           the one you are already in. A blue bar closes the gap to the next
-          meeting, a yellow fill sweeps across the key over the last few
+          meeting, a yellow fill creeps across the key over the last few
           minutes, and a green fill tracks time elapsed once the meeting is
           under way. Press the key to join.
+        </p>
+        <p>
+          Give it more than one key and the fills span the whole group as a
+          single band, turning a row or a block of keys into one countdown bar
+          you can read from across the room.
+        </p>
+
+        <h2>Multi-key sweep</h2>
+        <p>
+          Several DeckCal keys side by side draw one band between them instead
+          of a bar each. The yellow run-up fill and the green in-meeting fill
+          span the whole group, each key painting its own slice. Five in a row
+          give you a countdown bar the width of the deck. Stack them and it gets
+          taller, because any block of touching keys joins in.
+        </p>
+        <video
+          src="examples/sweep.mp4"
+          autoplay
+          loop
+          muted
+          playsinline
+          controls
+        >
+          Your browser does not support the video tag.
+        </video>
+        <p>
+          Mix <strong>Meeting countdown</strong> and
+          <strong>Meeting alert</strong> keys to pick which ones carry the text
+          and which are pure bar. Nothing to configure: keys join a band when
+          they touch and count down to the same meeting, so it forms and
+          dissolves on its own.
         </p>
 
         <h2>At a glance</h2>
@@ -156,54 +188,16 @@
           </li>
         </ul>
 
-        <h2>Multi-key sweep</h2>
-        <p>
-          Place several <strong>Meeting countdown</strong> (or
-          <strong>Upcoming meeting</strong>) keys next to each other and the
-          yellow imminent fill sweeps across them as a single band in the last
-          few minutes before a meeting. Far more visible than a single key can
-          manage on its own.
-        </p>
-        <video
-          src="examples/sweep.mp4"
-          autoplay
-          loop
-          muted
-          playsinline
-          controls
-        >
-          Your browser does not support the video tag.
-        </video>
-
-        <h2>Four actions</h2>
+        <h2>Two actions</h2>
         <ul class="actions">
           <li class="action">
             <img src="actions/countdown.svg" alt="" />
             <div>
               <h3>Meeting countdown</h3>
               <p>
-                The meeting you are in, otherwise the next upcoming one. The "do
-                everything" action.
-              </p>
-            </div>
-          </li>
-          <li class="action">
-            <img src="actions/upcoming.svg" alt="" />
-            <div>
-              <h3>Upcoming meeting</h3>
-              <p>
-                Only the next upcoming meeting. Ignores meetings already in
-                progress.
-              </p>
-            </div>
-          </li>
-          <li class="action">
-            <img src="actions/ongoing.svg" alt="" />
-            <div>
-              <h3>Ongoing meeting</h3>
-              <p>
-                Only the meeting you are currently in. Idle when nothing is
-                happening.
+                Countdown text, progress bars, press to join. A
+                <strong>Show</strong> setting picks whether it follows the
+                meeting you are in, the next one, or whichever is most relevant.
               </p>
             </div>
           </li>
@@ -212,8 +206,9 @@
             <div>
               <h3>Meeting alert</h3>
               <p>
-                A blank tile that lights up only as a meeting starts. Long press
-                joins it.
+                The same bars, no text, blank until a meeting is close. It
+                widens the band without repeating the countdown. Long press
+                joins the meeting.
               </p>
             </div>
           </li>
@@ -229,10 +224,11 @@
             </p>
           </li>
           <li class="feature">
-            <h3>Imminent fill</h3>
+            <h3>Multi-key sweep</h3>
             <p>
-              A yellow block gradually fills the key over the last few minutes,
-              sweeping across neighbouring keys as one band.
+              The yellow run-up fill and the green in-meeting fill span every
+              touching DeckCal key as one band, so a countdown can be as big as
+              you want it.
             </p>
           </li>
           <li class="feature">

@@ -19,7 +19,6 @@ import {
 } from "../calendar/auth";
 import type { CalendarEvent, CalendarSummary } from "../calendar/client";
 import { detectConference, pickAttachment } from "../calendar/conferencing";
-import type { SelectionMode } from "../calendar/selection";
 import type { RenderVariant } from "../render/icon";
 import {
   accountNeedsAuth,
@@ -42,6 +41,7 @@ import {
   resolveNextMeeting,
   resolveProvider,
   retainAccounts,
+  type SelectionMode,
   toNumber,
 } from "../settings";
 import { openInApp, openUrl } from "../util/launch";
@@ -59,7 +59,10 @@ type IncomingMessage =
   | { kind: "getVariant" }
   | { kind: "refreshNow" };
 
-type PaneVariant = SelectionMode | "alert";
+// Which settings the property inspector shows. The countdown action narrows
+// further from the `mode` setting on the PI side; only alert-ness has to come
+// from the plugin, because settings alone can't reveal which action a key is.
+type PaneVariant = "countdown" | "alert";
 
 type OutgoingMessage =
   | { kind: "authResult"; ok: true; account: Account }
@@ -70,7 +73,6 @@ type OutgoingMessage =
   | { kind: "refreshed"; ok: boolean };
 
 abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
-  protected abstract readonly selectionMode: SelectionMode;
   protected readonly renderVariant: RenderVariant = "normal";
 
   private readonly longPressTimers = new Map<
@@ -116,7 +118,7 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     if (migration.changed || settings !== ev.payload.settings) {
       await ev.action.setSettings(settings);
     }
-    registerKey(ev.action, settings, this.selectionMode, this.renderVariant);
+    registerKey(ev.action, settings, this.renderVariant);
   }
 
   override async onWillDisappear(
@@ -226,7 +228,7 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
 
     if (msg.kind === "getVariant") {
       const variant: PaneVariant =
-        this.renderVariant === "alert" ? "alert" : this.selectionMode;
+        this.renderVariant === "alert" ? "alert" : "countdown";
       await this.send(ev, { kind: "variant", variant });
       return;
     }
@@ -283,12 +285,14 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
       return;
     }
     if (state === "idle" || state === "upcoming") {
-      this.runNextMeetingAction(settings);
+      if (!this.runNextMeetingAction(settings)) await ev.action.showAlert();
       return;
     }
     if (state === "flashing") return; // ack already fired on keyDown
     if (selection?.mode === "ongoing") {
-      this.joinMeeting(selection.event, settings);
+      if (!this.joinMeeting(selection.event, settings)) {
+        await ev.action.showAlert();
+      }
     }
   }
 
@@ -302,45 +306,40 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     if (!selection || selection.mode === "idle") return;
 
     if (state === "flashing") {
-      this.joinMeeting(selection.event, settings);
+      if (!this.joinMeeting(selection.event, settings)) {
+        await ev.action.showAlert();
+      }
       return;
     }
-    this.openNotes(selection.event);
+    if (!this.openNotes(selection.event)) await ev.action.showAlert();
   }
 
+  // The three launch helpers return false when there was nothing to open or
+  // the launch could not be dispatched. Callers turn that into showAlert(),
+  // which the Stream Deck guidelines require when an action fails.
   protected joinMeeting(
     event: CalendarEvent,
     settings: CountdownSettings,
-  ): void {
+  ): boolean {
     const conf = detectConference(event);
     if (!conf) {
-      if (event.htmlLink) openUrl(event.htmlLink);
-      return;
+      return event.htmlLink ? openUrl(event.htmlLink) : false;
     }
     const handler = resolveProvider(settings, conf.provider);
-    if (handler.type === "app") {
-      openInApp(handler.app, conf.url);
-    } else {
-      openUrl(conf.url);
-    }
+    return handler.type === "app"
+      ? openInApp(handler.app, conf.url)
+      : openUrl(conf.url);
   }
 
-  private openNotes(event: CalendarEvent): void {
+  private openNotes(event: CalendarEvent): boolean {
     const attachment = pickAttachment(event);
-    if (attachment) {
-      openUrl(attachment);
-      return;
-    }
-    if (event.htmlLink) openUrl(event.htmlLink);
+    if (attachment) return openUrl(attachment);
+    return event.htmlLink ? openUrl(event.htmlLink) : false;
   }
 
-  private runNextMeetingAction(settings: CountdownSettings): void {
+  private runNextMeetingAction(settings: CountdownSettings): boolean {
     const a = resolveNextMeeting(settings);
-    if (a.type === "app") {
-      openInApp(a.app, a.arg);
-    } else {
-      openUrl(a.url);
-    }
+    return a.type === "app" ? openInApp(a.app, a.arg) : openUrl(a.url);
   }
 
   protected async runAuthFlow(
@@ -380,6 +379,7 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
         byAccount,
       } as unknown as JsonValue);
     } catch (err) {
+      await action.showAlert();
       // googleapis/gaxios errors hide useful detail in response.data — log it.
       const detail = (err as { response?: { data?: unknown } })?.response?.data;
       log.error(
@@ -405,26 +405,13 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
 }
 
 @action({ UUID: "com.ewels.deckcal.countdown" })
-export class CountdownAction extends BaseCountdownAction {
-  protected readonly selectionMode: SelectionMode = "combined";
-}
-
-@action({ UUID: "com.ewels.deckcal.upcoming" })
-export class UpcomingAction extends BaseCountdownAction {
-  protected readonly selectionMode: SelectionMode = "upcoming";
-}
-
-@action({ UUID: "com.ewels.deckcal.ongoing" })
-export class OngoingAction extends BaseCountdownAction {
-  protected readonly selectionMode: SelectionMode = "ongoing";
-}
+export class CountdownAction extends BaseCountdownAction {}
 
 // Blank tile that only lights up during the meeting-start flash. Every state
 // other than no-accounts (sign in) and flashing (join on long press) is a
 // silent no-op — the user's other DeckCal keys carry the visible interactions.
 @action({ UUID: "com.ewels.deckcal.alert" })
 export class AlertAction extends BaseCountdownAction {
-  protected readonly selectionMode: SelectionMode = "combined";
   protected override readonly renderVariant: RenderVariant = "alert";
 
   protected override async handleShortPress(
@@ -439,6 +426,8 @@ export class AlertAction extends BaseCountdownAction {
   ): Promise<void> {
     const { state, selection } = await getPressContextForKey(ev.action.id);
     if (state !== "flashing" || selection?.mode !== "ongoing") return;
-    this.joinMeeting(selection.event, ev.payload.settings);
+    if (!this.joinMeeting(selection.event, ev.payload.settings)) {
+      await ev.action.showAlert();
+    }
   }
 }

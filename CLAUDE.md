@@ -4,12 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Stream Deck plugin (`com.ewels.deckcal`, "DeckCal") that turns a key into a live Google Calendar countdown. Four actions, all driven by the same `BaseCountdownAction` and the same shared runtime:
+A Stream Deck plugin (`com.ewels.deckcal`, "DeckCal") that turns a key into a live Google Calendar countdown. Two visible actions, both driven by the same `BaseCountdownAction` and the same shared runtime:
 
-- `com.ewels.deckcal.countdown` — "Meeting countdown": ongoing if you're in one, otherwise next upcoming.
-- `com.ewels.deckcal.upcoming` — "Upcoming meeting": next upcoming only; ignores ongoing.
-- `com.ewels.deckcal.ongoing` — "Ongoing meeting": current meeting only; idle otherwise.
-- `com.ewels.deckcal.alert` — "Meeting alert": blank tile that lights up only during the meeting-start flash.
+- `com.ewels.deckcal.countdown` — "Meeting countdown": the full tile. Its `mode` setting (the PI's "Show" dropdown) picks `combined` (ongoing if you're in one, otherwise next upcoming; the default), `upcoming` (ignores ongoing) or `ongoing` (idle otherwise).
+- `com.ewels.deckcal.alert` — "Meeting alert": no text, just the yellow run-up fill, the green in-meeting bar and the meeting-start flash.
 
 The visible keys auto-update every second from a 60-second Google Calendar poll, with progress bars, a yellow imminent-fill in the last 5 minutes, a full-tile 50%-opacity green fill while a meeting is ongoing (both sweeping across adjacent keys as one band when they resolve to the same meeting), a yellow flash on meeting start (auto-dismissed after `autoAckAfterMinutes`, default 5), and a footer band for OOO / focus overlaps.
 
@@ -90,12 +88,12 @@ slow every commit, and CI runs them as a separate job anyway.
 Coverage is deliberately scoped to the four modules that hold real logic and
 import nothing from `@elgato/streamdeck`, so they need no SDK harness:
 
-| Module                     | What is covered                                                                                                                         |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `settings.ts`              | `toNumber` / `optionalNumber` three-state parsing, `migrateSettings` legacy lifts, `retainAccounts`, provider + next-meeting resolution |
-| `calendar/selection.ts`    | filter pipeline, horizon, ongoing-vs-imminent priority, gap anchoring, overlap counting, OOO / focus modes, the three selection modes   |
-| `calendar/conferencing.ts` | Meet / Zoom / Teams detection and precedence, attachment pick                                                                           |
-| `render/icon.ts`           | time formatting, every render state, fill geometry, the multi-key sweep, alert variant                                                  |
+| Module                     | What is covered                                                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `settings.ts`              | `toNumber` / `optionalNumber` three-state parsing, `migrateSettings` legacy lifts, `retainAccounts`, `resolveMode`, provider + next-meeting resolution |
+| `calendar/selection.ts`    | filter pipeline, horizon, ongoing-vs-imminent priority, gap anchoring, overlap counting, OOO / focus modes, the three selection modes                  |
+| `calendar/conferencing.ts` | Meet / Zoom / Teams detection and precedence, attachment pick                                                                                          |
+| `render/icon.ts`           | time formatting, every render state, fill geometry, the multi-key sweep, alert variant                                                                 |
 
 `runtime.ts`, `store.ts`, `launch.ts`, `client.ts` and `auth.ts` all import
 `streamDeck` (directly or via `util/log`), which reads `process.execArgv` and
@@ -239,14 +237,15 @@ biome owns JS/TS, prettier owns everything else.
 
 ```
 src/
-  plugin.ts             bootstrap: registers the 4 actions + connect()
-  settings.ts           CountdownSettings, GlobalSettings, DEFAULTS, resolveProvider/resolveNextMeeting
+  plugin.ts             bootstrap: registers the 2 actions + connect()
+  settings.ts           CountdownSettings, GlobalSettings, DEFAULTS, SelectionMode,
+                        resolveMode/resolveProvider/resolveNextMeeting
   actions/
-    countdown.ts        BaseCountdownAction + 4 subclasses (CountdownAction,
-                        UpcomingAction, OngoingAction, AlertAction) — shared
-                        key lifecycle, state-driven press dispatch, PI bridge.
-                        Subclasses differ only in `selectionMode` (combined /
-                        upcoming / ongoing) and `renderVariant` (alert).
+    countdown.ts        BaseCountdownAction + CountdownAction and AlertAction —
+                        shared key lifecycle, state-driven press dispatch, PI
+                        bridge. The two differ only in `renderVariant`; the
+                        selection mode is `settings.mode`, read via
+                        `resolveMode()`.
   calendar/
     auth.ts             OAuth 2.0 PKCE loopback flow, token persistence in global settings
     client.ts           @googleapis/calendar wrapper: listCalendars, listEvents, normalize → CalendarEvent
@@ -264,15 +263,29 @@ src/
   **/*.test.ts          vitest suites, colocated with the module they cover
 com.ewels.deckcal.sdPlugin/
   manifest.json         plugin manifest (Elgato schema)
-  ui/countdown.html     property inspector (sdpi-components v4 over CDN)
+  ui/countdown.html     property inspector
+  ui/sdpi-components.js sdpi-components v4.0.1, vendored rather than loaded
+                        from sdpi-components.dev so the panel works offline.
+                        Third-party minified bundle: excluded in biome.json,
+                        and already covered by .prettierignore's *.js rule.
+                        Re-vendor by curl-ing the same release URL.
   ui/countdown.js       PI bridge: sign-in, calendar checkbox list, conditional show/hide
   bin/plugin.js         rollup output, gitignored
-  imgs/                 action + plugin icons (svg sources + rsvg-rendered pngs)
+  imgs/                 SVG only, except the marketplace icon. Elgato sizes the
+                        art by role, so the rasters were dropped rather than
+                        maintained at two sizes each (see "Elgato guidelines"):
+                          actions/<name>/icon.svg  action list, 20x20,
+                            monochrome #ffffff on transparent
+                          actions/<name>/key.svg   default key image, 72x72
+                            nominal, colour allowed (not a list icon)
+                          plugin/category-icon.svg 28x28, same mono rule
+                          plugin/marketplace.png   256x256 + @2x, colour, PNG
+                            is mandatory for this one
 docs/                   GitHub Pages site (see "Website" below) + README assets
   index.html            homepage
   privacy/index.html    privacy policy (the URL Google's OAuth config points at)
   assets/               style.css, Mona-Sans.woff2, background.jpg
-  actions/              144x144 tile renderings of the four action icons
+  actions/              144x144 tile renderings of the two action icons
   examples/             key-state screenshots + sweep.mp4, also used by README.md
   logo-*.svg            wordmark, light and dark, also used by README.md
 vitest.config.ts        test config: include src/**/*.test.ts, node environment
@@ -288,6 +301,8 @@ Stream Deck spawns `node bin/plugin.js`; the SDK translates websocket events int
 
 Flat keys (sdpi-components binds via flat `setting="X"` paths). `resolveProvider()` and `resolveNextMeeting()` in `src/settings.ts` reassemble structured handlers from the flat fields. Number fields stored by sdpi-textfield arrive as strings, so always re-parse via `toNumber(value, fallback)`.
 
+`mode` is the `SelectionMode` the key runs in, set by the PI's "Show" dropdown and read at render / press time via `resolveMode()`, which falls back to `combined` for undefined (a key nobody has configured) and for anything unrecognised.
+
 `account` is a structured `{ sub, email }` set by the plugin after OAuth completes; the PI displays the email but does not edit this field directly. OAuth tokens themselves live in global settings under `accounts[sub]`, so they survive button reassignment and aren't duplicated per key.
 
 ### Key press lifecycle
@@ -296,7 +311,7 @@ Flat keys (sdpi-components binds via flat `setting="X"` paths). `resolveProvider
 
 Any keyDown also calls `acknowledgeForKey(actionId)`, which pushes the currently-ongoing event's ID into `global.acknowledgedEventIds`. The ticker uses that set to decide whether to flash an ongoing event — the user has seen the alert, no more flashing.
 
-Press dispatch is state-driven and shared by all four actions. `getPressContextForKey(actionId)` reads the cached selection for that key and reports one of `no-accounts`, `flashing`, `ongoing`, `upcoming`, or `idle`. The base class fans those into:
+Press dispatch is state-driven and shared by every action. `getPressContextForKey(actionId)` reads the cached selection for that key and reports one of `no-accounts`, `flashing`, `ongoing`, `upcoming`, or `idle`. The base class fans those into:
 
 Short press:
 
@@ -341,8 +356,8 @@ Text color:
 
 `countdown.js` uses `SDPIComponents.streamDeckClient`:
 
-- `.send("sendToPlugin", payload)` — outbound, four kinds: `startAuth`, `signOut`, `listCalendars`, `getVariant`. `getVariant` lets the PI ask the plugin which action UUID this key is bound to, so the same `countdown.html` panel can hide irrelevant fields for the upcoming / ongoing / alert variants.
-- `.sendToPropertyInspector.subscribe(cb)` — inbound, four kinds: `authResult`, `calendars`, `signedOut`, `variant`.
+- `.send("sendToPlugin", payload)` — outbound, five kinds: `startAuth`, `signOut`, `listCalendars`, `getVariant`, `refreshNow`. `getVariant` answers `"countdown"` or `"alert"` only: settings alone can't say which action a key is bound to, but everything else the panel hides or shows is derived PI-side from `settings.mode`, so the fields follow the "Show" dropdown live.
+- `.sendToPropertyInspector.subscribe(cb)` — inbound, five kinds: `authResult`, `calendars`, `signedOut`, `variant`, `refreshed`.
 - `.getSettings()` / `.setSettings()` — read/write the action settings.
 - `.didReceiveSettings.subscribe(cb)` — refresh the UI when something else changes settings (e.g., the plugin saving `account` after sign-in).
 
@@ -357,6 +372,32 @@ Text color:
 5. Plugin decodes `id_token` to get `sub` + `email`, persists `{ sub, email, tokens }` to global settings, writes `account = { sub, email }` to per-key settings, sends `authResult` to PI.
 
 Refresh is handled transparently by `OAuth2Client`. The `tokens` event handler persists refreshed `access_token`s back to global settings.
+
+## Elgato guidelines
+
+The plugin is built to <https://docs.elgato.com/guidelines/stream-deck/plugins/>
+and the Marketplace product rules at
+<https://docs.elgato.com/guidelines/products/>. The ones that constrain code or
+assets, and are easy to break by accident:
+
+- **Action list icons** are monochrome `#ffffff` on a transparent background,
+  20x20 (category icon 28x28). Colour is allowed on the key image and nowhere
+  else in the list. Ship SVG and no PNG twin: the manifest resolves icons
+  without an extension, so a stale raster silently wins the lookup.
+- **`showAlert()` is required when an operation fails.** Every launch path
+  returns a boolean for exactly this reason; see `openUrl` / `openInApp` in
+  `util/launch.ts` and the three helpers in `actions/countdown.ts`.
+- **Key images update at most 10 times a second.** The ticker runs at 1Hz and
+  skips `setImage` when the data URL is unchanged, so there is headroom, but
+  anything faster than 10Hz is a violation.
+- **Property inspector**: settings save on change (no Save button), booleans
+  are checkboxes, single-select is a dropdown, and long prose is discouraged
+  since the panel is for configuration. No donation links, no copyright notice.
+- **2 to 30 actions.** DeckCal has 2; removing either one would put it under.
+- Marketplace listing assets live outside this repo (Maker Console), but the
+  masters and the listing copy are in `docs/marketplace-listing.md`, which
+  carries the spec for each slot. Keep that file in step with any change to
+  how the plugin describes itself.
 
 ## Conventions
 

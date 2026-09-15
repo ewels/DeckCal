@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.0 (2026-09-16)
+
+- **Breaking:** the **Upcoming meeting** and **Ongoing meeting** actions are
+  gone. **Meeting countdown** has a **Show** setting that does the same three
+  jobs.
+- When a press cannot do what it is meant to, the key flashes the Stream Deck
+  alert icon instead of looking like nothing happened.
+- The settings panel opens with no internet connection. Previously, part of its interface
+  was fetched from the web on open.
+- Made icons plain-white to match Elgato guidelines.
+
 ## v1.0.0 (2026-08-17)
 
 First release.

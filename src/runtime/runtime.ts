@@ -6,7 +6,7 @@ import {
   type CalendarEvent,
   listEvents,
 } from "../calendar/client";
-import { type SelectionMode, select } from "../calendar/selection";
+import { select } from "../calendar/selection";
 import {
   type BlockPlacement,
   buildSvgTile,
@@ -18,6 +18,7 @@ import {
   type CountdownSettings,
   DEFAULTS,
   optionalNumber,
+  resolveMode,
   retainAccounts,
   toNumber,
 } from "../settings";
@@ -60,7 +61,6 @@ type AccountState = {
 type KeyRegistration = {
   action: KeyAction<CountdownSettings>;
   settings: CountdownSettings;
-  selectionMode: SelectionMode;
   renderVariant: RenderVariant;
   lastDataUrl?: string;
 };
@@ -278,7 +278,9 @@ function toRenderState(
   const filtered = allEvents.filter((e) =>
     e.calendarIds.some((cid) => wanted.has(selKey(e.accountSub, cid))),
   );
-  const result = select(filtered, reg.settings, { mode: reg.selectionMode });
+  const result = select(filtered, reg.settings, {
+    mode: resolveMode(reg.settings),
+  });
 
   const imminentMs =
     toNumber(reg.settings.imminentFillMinutes, DEFAULTS.imminentFillMinutes) *
@@ -519,10 +521,9 @@ function stopLoops(): void {
 export function registerKey(
   action: KeyAction<CountdownSettings>,
   settings: CountdownSettings,
-  selectionMode: SelectionMode = "combined",
   renderVariant: RenderVariant = "normal",
 ): void {
-  keys.set(action.id, { action, settings, selectionMode, renderVariant });
+  keys.set(action.id, { action, settings, renderVariant });
   startLoops();
   void renderAllKeys();
 }
@@ -594,7 +595,7 @@ function activeSelection(
 ): ReturnType<typeof select> | null {
   const filtered = filteredEventsForKey(reg.action.id);
   if (!filtered) return null;
-  return select(filtered, reg.settings, { mode: reg.selectionMode });
+  return select(filtered, reg.settings, { mode: resolveMode(reg.settings) });
 }
 
 export type PressContext = {

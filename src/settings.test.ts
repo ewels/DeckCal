@@ -4,6 +4,7 @@ import {
   DEFAULTS,
   migrateSettings,
   optionalNumber,
+  resolveMode,
   resolveNextMeeting,
   resolveProvider,
   retainAccounts,
@@ -238,5 +239,20 @@ describe("resolveNextMeeting", () => {
       type: "url",
       url: DEFAULTS.nextMeetingActionUrl,
     });
+  });
+});
+
+describe("resolveMode", () => {
+  it("defaults to combined when unset or unrecognised", () => {
+    expect(resolveMode({})).toBe("combined");
+    expect(resolveMode({ mode: "combined" })).toBe("combined");
+    expect(resolveMode({ mode: "bogus" } as unknown as CountdownSettings)).toBe(
+      "combined",
+    );
+  });
+
+  it("passes through the two narrow modes", () => {
+    expect(resolveMode({ mode: "upcoming" })).toBe("upcoming");
+    expect(resolveMode({ mode: "ongoing" })).toBe("ongoing");
   });
 });

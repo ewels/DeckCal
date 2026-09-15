@@ -53,15 +53,29 @@
     const authBySub = {};
 
     const VARIANT_BANNERS = {
-      combined:
-        "Shows your current meeting if you're in one, otherwise the next one. (Sign in once, you can use the same accounts in any other DeckCal action.)",
-      upcoming:
-        "Shows your next upcoming meeting. Ignores any meeting that is already happening.",
-      ongoing:
-        "Shows the meeting you are currently in. Idle when nothing is happening.",
+      combined: "The meeting you are in, otherwise the next one.",
+      upcoming: "The next meeting only. Ignores one already under way.",
+      ongoing: "The meeting you are in. Idle the rest of the time.",
       alert:
-        "Blank tile that only lights up the moment a meeting starts. Short press dismisses, long press joins.",
+        "Bars only, no text: yellow before a meeting, green during it, flashing as it starts. Long press joins.",
     };
+
+    // Which pane layout to show. The alert action has its own; every other key
+    // follows the "Show" dropdown. Only alert-ness comes from the plugin
+    // (settings alone can't say which action a key is bound to), so the banner
+    // stays hidden until that reply lands.
+    let isAlert = false;
+    let variantKnown = false;
+
+    function applyVariantFor(settings) {
+      const mode = settings?.mode;
+      const variant = isAlert
+        ? "alert"
+        : mode === "upcoming" || mode === "ongoing"
+          ? mode
+          : "combined";
+      applyVariantVisibility(variant, variantKnown);
+    }
 
     function applyVariantVisibility(variant, showBanner) {
       const banner = els.variantBanner;
@@ -318,13 +332,10 @@
         return;
       }
       if (msg.kind === "variant") {
-        if (
-          msg.variant === "combined" ||
-          msg.variant === "upcoming" ||
-          msg.variant === "ongoing" ||
-          msg.variant === "alert"
-        ) {
-          applyVariantVisibility(msg.variant, true);
+        if (msg.variant === "countdown" || msg.variant === "alert") {
+          isAlert = msg.variant === "alert";
+          variantKnown = true;
+          void readSettings().then(applyVariantFor);
         }
         return;
       }
@@ -364,16 +375,26 @@
       return next;
     }
 
-    // Initial hydration.
+    // Initial hydration. Paint the countdown layout straight away so the
+    // alert-only / mode-specific rows don't flash in before the first
+    // settings read lands; the banner stays hidden until getVariant replies.
+    applyVariantFor({});
     bindConditionalDrivers();
-    // All sections visible (banner hidden) until the plugin's getVariant
-    // reply lands and narrows the view to the current action variant.
-    applyVariantVisibility("combined", false);
+    // The SDK doesn't echo PI-initiated changes back, so the "Show" dropdown
+    // has to re-run the variant logic itself (same reason as
+    // bindConditionalDrivers above).
+    const modeEl = document.querySelector('[setting="mode"]');
+    if (modeEl) {
+      modeEl.addEventListener("valuechange", () => {
+        applyVariantFor(snapshotDomSettings());
+      });
+    }
     void client.send("sendToPlugin", { kind: "getVariant" });
     void readSettings().then((raw) => {
       const settings = applyFormDefaults(raw);
       renderAccounts(settings.accounts);
       applyConditionals(settings);
+      applyVariantFor(settings);
       if ((settings.accounts || []).length > 0) {
         void client.send("sendToPlugin", { kind: "listCalendars" });
       }
@@ -387,6 +408,7 @@
       client.didReceiveSettings.subscribe((ev) => {
         const settings = ev?.payload?.settings || ev?.settings || {};
         applyConditionals(settings);
+        applyVariantFor(settings);
         renderAccounts(settings.accounts);
       });
     }
