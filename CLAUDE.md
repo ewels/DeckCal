@@ -269,7 +269,14 @@ com.ewels.deckcal.sdPlugin/
   ui/countdown.html     property inspector (sdpi-components v4 over CDN)
   ui/countdown.js       PI bridge: sign-in, calendar checkbox list, conditional show/hide
   bin/plugin.js         rollup output, gitignored
-  imgs/                 action + plugin icons (svg sources + rsvg-rendered pngs)
+  imgs/                 actions/<name>/icon.svg  action-list icon: monochrome
+                        #ffffff on transparent, SVG only, per Elgato's icon
+                        guidelines. No PNG twin: a stale raster would win the
+                        extension-less lookup and put colour back in the list.
+                        actions/<name>/key.*     default key image, colour is
+                        fine here (it is not a list icon), svg + rsvg-rendered
+                        pngs. plugin/ holds the category icon (same mono rule)
+                        and the colour marketplace icon.
 docs/                   GitHub Pages site (see "Website" below) + README assets
   index.html            homepage
   privacy/index.html    privacy policy (the URL Google's OAuth config points at)

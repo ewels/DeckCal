@@ -12,6 +12,9 @@
   plugin description, the README opening, and the top of the website, rather
   than in a subsection halfway down. The green in-meeting band is part of that
   description now too, alongside the yellow run-up band.
+- The action list icons follow Elgato's icon guidelines: monochrome white on
+  a transparent background, SVG only. The yellow bell, amber arrow and green
+  play triangle were the only colour left in them.
 - Clearer wording for **Meeting alert** everywhere it is described: it also
   carries the yellow run-up fill and the green in-meeting bar, not just the
   flash as a meeting starts.

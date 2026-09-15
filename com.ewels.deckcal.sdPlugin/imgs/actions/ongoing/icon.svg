@@ -3,5 +3,5 @@
   <line x1="3" y1="8" x2="17" y2="8" stroke="#ffffff" stroke-width="1.4"/>
   <rect x="6" y="2.5" width="1.2" height="3" fill="#ffffff"/>
   <rect x="12.8" y="2.5" width="1.2" height="3" fill="#ffffff"/>
-  <polygon points="7.8,10 7.8,15 13.2,12.5" fill="#34A853"/>
+  <polygon points="7.8,10 7.8,15 13.2,12.5" fill="#ffffff"/>
 </svg>
