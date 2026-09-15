@@ -158,11 +158,12 @@
 
         <h2>Multi-key sweep</h2>
         <p>
-          Place several <strong>Meeting countdown</strong> (or
-          <strong>Upcoming meeting</strong>) keys next to each other and the
-          yellow imminent fill sweeps across them as a single band in the last
-          few minutes before a meeting. Far more visible than a single key can
-          manage on its own.
+          Place several DeckCal keys next to each other and the yellow imminent
+          fill sweeps across them as a single band in the last few minutes
+          before a meeting. Far more visible than a single key can manage on its
+          own. Mix <strong>Meeting countdown</strong> and
+          <strong>Meeting alert</strong> keys to choose which of them carries
+          the text and which is just bar.
         </p>
         <video
           src="examples/sweep.mp4"
@@ -175,35 +176,16 @@
           Your browser does not support the video tag.
         </video>
 
-        <h2>Four actions</h2>
+        <h2>Two actions</h2>
         <ul class="actions">
           <li class="action">
             <img src="actions/countdown.svg" alt="" />
             <div>
               <h3>Meeting countdown</h3>
               <p>
-                The meeting you are in, otherwise the next upcoming one. The "do
-                everything" action.
-              </p>
-            </div>
-          </li>
-          <li class="action">
-            <img src="actions/upcoming.svg" alt="" />
-            <div>
-              <h3>Upcoming meeting</h3>
-              <p>
-                Only the next upcoming meeting. Ignores meetings already in
-                progress.
-              </p>
-            </div>
-          </li>
-          <li class="action">
-            <img src="actions/ongoing.svg" alt="" />
-            <div>
-              <h3>Ongoing meeting</h3>
-              <p>
-                Only the meeting you are currently in. Idle when nothing is
-                happening.
+                The countdown, the progress bars and the text. A
+                <strong>Show</strong> setting picks whether it follows the
+                meeting you are in, the next one, or whichever is most relevant.
               </p>
             </div>
           </li>
@@ -212,8 +194,9 @@
             <div>
               <h3>Meeting alert</h3>
               <p>
-                A blank tile that lights up only as a meeting starts. Long press
-                joins it.
+                The same bars with no text: yellow as a meeting approaches,
+                green while it runs, flashing as it starts, blank the rest of
+                the time. Long press joins the meeting.
               </p>
             </div>
           </li>

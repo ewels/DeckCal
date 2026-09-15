@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.1.0 (unreleased)
+
+- The **Upcoming meeting** and **Ongoing meeting** actions are retired.
+  **Meeting countdown** now has a **Show** setting covering the same three
+  jobs: the current meeting falling back to the next one (default), the next
+  one only, or the current one only. Keys already placed on the retired
+  actions keep working and pick up the matching setting, but the two actions
+  no longer appear in the Stream Deck actions list.
+- Clearer wording for **Meeting alert** everywhere it is described: it also
+  carries the yellow run-up fill and the green in-meeting bar, not just the
+  flash as a meeting starts.
+
 ## v1.0.0 (2026-08-17)
 
 First release.

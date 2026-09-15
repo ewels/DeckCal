@@ -10,7 +10,7 @@
       "Name": "Meeting countdown",
       "UUID": "com.ewels.deckcal.countdown",
       "Icon": "imgs/actions/countdown/icon",
-      "Tooltip": "Live countdown to your next Google Calendar meeting. Shows whichever is most relevant: the current meeting, or the next one.",
+      "Tooltip": "Live countdown to your next Google Calendar meeting. Set it to show the meeting you are in, the next one, or whichever is most relevant.",
       "PropertyInspectorPath": "ui/countdown.html",
       "Controllers": ["Keypad"],
       "States": [
@@ -22,10 +22,11 @@
       ]
     },
     {
-      "Name": "Upcoming meeting",
+      "Name": "Upcoming meeting (retired)",
       "UUID": "com.ewels.deckcal.upcoming",
       "Icon": "imgs/actions/upcoming/icon",
-      "Tooltip": "Countdown to your next Google Calendar meeting. Ignores any meeting that's already happening.",
+      "Tooltip": "Retired: use Meeting countdown and set Show to \"Next meeting only\".",
+      "VisibleInActionsList": false,
       "PropertyInspectorPath": "ui/countdown.html",
       "Controllers": ["Keypad"],
       "States": [
@@ -37,10 +38,11 @@
       ]
     },
     {
-      "Name": "Ongoing meeting",
+      "Name": "Ongoing meeting (retired)",
       "UUID": "com.ewels.deckcal.ongoing",
       "Icon": "imgs/actions/ongoing/icon",
-      "Tooltip": "Status of the meeting you're currently in. Idle when nothing is happening.",
+      "Tooltip": "Retired: use Meeting countdown and set Show to \"Current meeting only\".",
+      "VisibleInActionsList": false,
       "PropertyInspectorPath": "ui/countdown.html",
       "Controllers": ["Keypad"],
       "States": [
@@ -55,7 +57,7 @@
       "Name": "Meeting alert",
       "UUID": "com.ewels.deckcal.alert",
       "Icon": "imgs/actions/alert/icon",
-      "Tooltip": "Blank tile that only lights up the moment a meeting starts. Press to dismiss, long-press to join.",
+      "Tooltip": "Bare tile: no text, just the yellow fill before a meeting, the green bar during it, and a flash as it starts. Place next to a countdown key for a wider bar.",
       "PropertyInspectorPath": "ui/countdown.html",
       "Controllers": ["Keypad"],
       "States": [

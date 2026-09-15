@@ -19,7 +19,6 @@ import {
 } from "../calendar/auth";
 import type { CalendarEvent, CalendarSummary } from "../calendar/client";
 import { detectConference, pickAttachment } from "../calendar/conferencing";
-import type { SelectionMode } from "../calendar/selection";
 import type { RenderVariant } from "../render/icon";
 import {
   accountNeedsAuth,
@@ -42,6 +41,7 @@ import {
   resolveNextMeeting,
   resolveProvider,
   retainAccounts,
+  type SelectionMode,
   toNumber,
 } from "../settings";
 import { openInApp, openUrl } from "../util/launch";
@@ -59,7 +59,10 @@ type IncomingMessage =
   | { kind: "getVariant" }
   | { kind: "refreshNow" };
 
-type PaneVariant = SelectionMode | "alert";
+// Which settings the property inspector shows. The countdown action narrows
+// further from the `mode` setting on the PI side; only alert-ness has to come
+// from the plugin, because settings alone can't reveal which action a key is.
+type PaneVariant = "countdown" | "alert";
 
 type OutgoingMessage =
   | { kind: "authResult"; ok: true; account: Account }
@@ -70,7 +73,8 @@ type OutgoingMessage =
   | { kind: "refreshed"; ok: boolean };
 
 abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
-  protected abstract readonly selectionMode: SelectionMode;
+  /** Mode stamped into a key's settings the first time it appears. */
+  protected readonly defaultMode: SelectionMode = "combined";
   protected readonly renderVariant: RenderVariant = "normal";
 
   private readonly longPressTimers = new Map<
@@ -87,6 +91,15 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     // multi-account shape on every appear so older keys stay compatible.
     const migration = migrateSettings(ev.payload.settings);
     let settings = migration.next;
+
+    // Keys created before the mode dropdown existed (including ones on the
+    // retired Upcoming / Ongoing actions) carry no `mode`: stamp the action's
+    // own default so the PI shows what the key is actually doing.
+    let stamped = false;
+    if (settings.mode === undefined) {
+      settings = { ...settings, mode: this.defaultMode };
+      stamped = true;
+    }
 
     const global = await loadGlobalSettings();
     const known = new Set(Object.keys(global.accounts ?? {}));
@@ -113,10 +126,10 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
       }
     }
 
-    if (migration.changed || settings !== ev.payload.settings) {
+    if (migration.changed || stamped || settings !== ev.payload.settings) {
       await ev.action.setSettings(settings);
     }
-    registerKey(ev.action, settings, this.selectionMode, this.renderVariant);
+    registerKey(ev.action, settings, this.renderVariant);
   }
 
   override async onWillDisappear(
@@ -226,7 +239,7 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
 
     if (msg.kind === "getVariant") {
       const variant: PaneVariant =
-        this.renderVariant === "alert" ? "alert" : this.selectionMode;
+        this.renderVariant === "alert" ? "alert" : "countdown";
       await this.send(ev, { kind: "variant", variant });
       return;
     }
@@ -405,18 +418,20 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
 }
 
 @action({ UUID: "com.ewels.deckcal.countdown" })
-export class CountdownAction extends BaseCountdownAction {
-  protected readonly selectionMode: SelectionMode = "combined";
-}
+export class CountdownAction extends BaseCountdownAction {}
 
+// Retired actions, kept registered so keys placed before the "Show" dropdown
+// existed keep working. `VisibleInActionsList: false` hides them from the
+// Stream Deck actions list, so nobody can add a new one; the only difference
+// from CountdownAction is the mode stamped in on first appear.
 @action({ UUID: "com.ewels.deckcal.upcoming" })
 export class UpcomingAction extends BaseCountdownAction {
-  protected readonly selectionMode: SelectionMode = "upcoming";
+  protected override readonly defaultMode: SelectionMode = "upcoming";
 }
 
 @action({ UUID: "com.ewels.deckcal.ongoing" })
 export class OngoingAction extends BaseCountdownAction {
-  protected readonly selectionMode: SelectionMode = "ongoing";
+  protected override readonly defaultMode: SelectionMode = "ongoing";
 }
 
 // Blank tile that only lights up during the meeting-start flash. Every state
@@ -424,7 +439,6 @@ export class OngoingAction extends BaseCountdownAction {
 // silent no-op — the user's other DeckCal keys carry the visible interactions.
 @action({ UUID: "com.ewels.deckcal.alert" })
 export class AlertAction extends BaseCountdownAction {
-  protected readonly selectionMode: SelectionMode = "combined";
   protected override readonly renderVariant: RenderVariant = "alert";
 
   protected override async handleShortPress(

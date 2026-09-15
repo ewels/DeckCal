@@ -154,6 +154,16 @@
   </head>
 
   <body>
+    <div data-show-variant="combined,upcoming,ongoing">
+      <div class="section">Show</div>
+      <sdpi-item label="This key">
+        <sdpi-select setting="mode" default="combined">
+          <option value="combined">Current meeting, else the next one</option>
+          <option value="upcoming">Next meeting only</option>
+          <option value="ongoing">Current meeting only</option>
+        </sdpi-select>
+      </sdpi-item>
+    </div>
     <div id="variantBanner" class="variant-banner hidden"></div>
     <div class="section">Accounts</div>
     <div id="accountList"></div>

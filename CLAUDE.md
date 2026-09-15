@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Stream Deck plugin (`com.ewels.deckcal`, "DeckCal") that turns a key into a live Google Calendar countdown. Four actions, all driven by the same `BaseCountdownAction` and the same shared runtime:
+A Stream Deck plugin (`com.ewels.deckcal`, "DeckCal") that turns a key into a live Google Calendar countdown. Two visible actions, both driven by the same `BaseCountdownAction` and the same shared runtime:
 
-- `com.ewels.deckcal.countdown` — "Meeting countdown": ongoing if you're in one, otherwise next upcoming.
-- `com.ewels.deckcal.upcoming` — "Upcoming meeting": next upcoming only; ignores ongoing.
-- `com.ewels.deckcal.ongoing` — "Ongoing meeting": current meeting only; idle otherwise.
-- `com.ewels.deckcal.alert` — "Meeting alert": blank tile that lights up only during the meeting-start flash.
+- `com.ewels.deckcal.countdown` — "Meeting countdown": the full tile. Its `mode` setting (the PI's "Show" dropdown) picks `combined` (ongoing if you're in one, otherwise next upcoming; the default), `upcoming` (ignores ongoing) or `ongoing` (idle otherwise).
+- `com.ewels.deckcal.alert` — "Meeting alert": no text, just the yellow run-up fill, the green in-meeting bar and the meeting-start flash.
+
+`com.ewels.deckcal.upcoming` and `com.ewels.deckcal.ongoing` are **retired**: still in the manifest with `"VisibleInActionsList": false`, and still registered (`UpcomingAction` / `OngoingAction`), purely so keys placed before v1.1.0 keep working. They differ from `CountdownAction` only in the `defaultMode` stamped into a key's settings the first time it appears, after which they behave identically. Do not add features to them; delete them if breaking those keys ever becomes acceptable.
 
 The visible keys auto-update every second from a 60-second Google Calendar poll, with progress bars, a yellow imminent-fill in the last 5 minutes, a full-tile 50%-opacity green fill while a meeting is ongoing (both sweeping across adjacent keys as one band when they resolve to the same meeting), a yellow flash on meeting start (auto-dismissed after `autoAckAfterMinutes`, default 5), and a footer band for OOO / focus overlaps.
 
@@ -90,12 +90,12 @@ slow every commit, and CI runs them as a separate job anyway.
 Coverage is deliberately scoped to the four modules that hold real logic and
 import nothing from `@elgato/streamdeck`, so they need no SDK harness:
 
-| Module                     | What is covered                                                                                                                         |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `settings.ts`              | `toNumber` / `optionalNumber` three-state parsing, `migrateSettings` legacy lifts, `retainAccounts`, provider + next-meeting resolution |
-| `calendar/selection.ts`    | filter pipeline, horizon, ongoing-vs-imminent priority, gap anchoring, overlap counting, OOO / focus modes, the three selection modes   |
-| `calendar/conferencing.ts` | Meet / Zoom / Teams detection and precedence, attachment pick                                                                           |
-| `render/icon.ts`           | time formatting, every render state, fill geometry, the multi-key sweep, alert variant                                                  |
+| Module                     | What is covered                                                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `settings.ts`              | `toNumber` / `optionalNumber` three-state parsing, `migrateSettings` legacy lifts, `retainAccounts`, `resolveMode`, provider + next-meeting resolution |
+| `calendar/selection.ts`    | filter pipeline, horizon, ongoing-vs-imminent priority, gap anchoring, overlap counting, OOO / focus modes, the three selection modes                  |
+| `calendar/conferencing.ts` | Meet / Zoom / Teams detection and precedence, attachment pick                                                                                          |
+| `render/icon.ts`           | time formatting, every render state, fill geometry, the multi-key sweep, alert variant                                                                 |
 
 `runtime.ts`, `store.ts`, `launch.ts`, `client.ts` and `auth.ts` all import
 `streamDeck` (directly or via `util/log`), which reads `process.execArgv` and
@@ -239,14 +239,16 @@ biome owns JS/TS, prettier owns everything else.
 
 ```
 src/
-  plugin.ts             bootstrap: registers the 4 actions + connect()
-  settings.ts           CountdownSettings, GlobalSettings, DEFAULTS, resolveProvider/resolveNextMeeting
+  plugin.ts             bootstrap: registers the 2 live + 2 retired actions + connect()
+  settings.ts           CountdownSettings, GlobalSettings, DEFAULTS, SelectionMode,
+                        resolveMode/resolveProvider/resolveNextMeeting
   actions/
-    countdown.ts        BaseCountdownAction + 4 subclasses (CountdownAction,
-                        UpcomingAction, OngoingAction, AlertAction) — shared
-                        key lifecycle, state-driven press dispatch, PI bridge.
-                        Subclasses differ only in `selectionMode` (combined /
-                        upcoming / ongoing) and `renderVariant` (alert).
+    countdown.ts        BaseCountdownAction + CountdownAction, AlertAction and
+                        the two retired subclasses — shared key lifecycle,
+                        state-driven press dispatch, PI bridge. Subclasses
+                        differ only in `renderVariant` (alert) and
+                        `defaultMode` (retired actions); the live selection
+                        mode is `settings.mode`, read via `resolveMode()`.
   calendar/
     auth.ts             OAuth 2.0 PKCE loopback flow, token persistence in global settings
     client.ts           @googleapis/calendar wrapper: listCalendars, listEvents, normalize → CalendarEvent
@@ -272,7 +274,7 @@ docs/                   GitHub Pages site (see "Website" below) + README assets
   index.html            homepage
   privacy/index.html    privacy policy (the URL Google's OAuth config points at)
   assets/               style.css, Mona-Sans.woff2, background.jpg
-  actions/              144x144 tile renderings of the four action icons
+  actions/              144x144 tile renderings of the two action icons
   examples/             key-state screenshots + sweep.mp4, also used by README.md
   logo-*.svg            wordmark, light and dark, also used by README.md
 vitest.config.ts        test config: include src/**/*.test.ts, node environment
@@ -288,6 +290,8 @@ Stream Deck spawns `node bin/plugin.js`; the SDK translates websocket events int
 
 Flat keys (sdpi-components binds via flat `setting="X"` paths). `resolveProvider()` and `resolveNextMeeting()` in `src/settings.ts` reassemble structured handlers from the flat fields. Number fields stored by sdpi-textfield arrive as strings, so always re-parse via `toNumber(value, fallback)`.
 
+`mode` is the `SelectionMode` the key runs in. It is stamped into settings on first appear (from the action's `defaultMode`) so the PI always reflects what the key is actually doing, and read at render / press time via `resolveMode()`, which falls back to `combined` for anything unrecognised.
+
 `account` is a structured `{ sub, email }` set by the plugin after OAuth completes; the PI displays the email but does not edit this field directly. OAuth tokens themselves live in global settings under `accounts[sub]`, so they survive button reassignment and aren't duplicated per key.
 
 ### Key press lifecycle
@@ -296,7 +300,7 @@ Flat keys (sdpi-components binds via flat `setting="X"` paths). `resolveProvider
 
 Any keyDown also calls `acknowledgeForKey(actionId)`, which pushes the currently-ongoing event's ID into `global.acknowledgedEventIds`. The ticker uses that set to decide whether to flash an ongoing event — the user has seen the alert, no more flashing.
 
-Press dispatch is state-driven and shared by all four actions. `getPressContextForKey(actionId)` reads the cached selection for that key and reports one of `no-accounts`, `flashing`, `ongoing`, `upcoming`, or `idle`. The base class fans those into:
+Press dispatch is state-driven and shared by every action. `getPressContextForKey(actionId)` reads the cached selection for that key and reports one of `no-accounts`, `flashing`, `ongoing`, `upcoming`, or `idle`. The base class fans those into:
 
 Short press:
 
@@ -341,8 +345,8 @@ Text color:
 
 `countdown.js` uses `SDPIComponents.streamDeckClient`:
 
-- `.send("sendToPlugin", payload)` — outbound, four kinds: `startAuth`, `signOut`, `listCalendars`, `getVariant`. `getVariant` lets the PI ask the plugin which action UUID this key is bound to, so the same `countdown.html` panel can hide irrelevant fields for the upcoming / ongoing / alert variants.
-- `.sendToPropertyInspector.subscribe(cb)` — inbound, four kinds: `authResult`, `calendars`, `signedOut`, `variant`.
+- `.send("sendToPlugin", payload)` — outbound, five kinds: `startAuth`, `signOut`, `listCalendars`, `getVariant`, `refreshNow`. `getVariant` answers `"countdown"` or `"alert"` only: settings alone can't say which action a key is bound to, but everything else the panel hides or shows is derived PI-side from `settings.mode`, so the fields follow the "Show" dropdown live.
+- `.sendToPropertyInspector.subscribe(cb)` — inbound, five kinds: `authResult`, `calendars`, `signedOut`, `variant`, `refreshed`.
 - `.getSettings()` / `.setSettings()` — read/write the action settings.
 - `.didReceiveSettings.subscribe(cb)` — refresh the UI when something else changes settings (e.g., the plugin saving `account` after sign-in).
 

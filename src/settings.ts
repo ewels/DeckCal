@@ -4,6 +4,10 @@
 
 export type SpecialEventMode = "footerBand" | "ignore" | "regular";
 
+// Which meetings a key follows. Lives in per-key settings (the PI's "Show"
+// dropdown) rather than in the action class, so one action covers all three.
+export type SelectionMode = "combined" | "upcoming" | "ongoing";
+
 export type ProviderHandler = { type: "url" } | { type: "app"; app: string };
 
 export type NextMeetingAction =
@@ -18,6 +22,10 @@ export type CalendarSelection = {
 };
 
 export type CountdownSettings = {
+  // Which meetings this key follows: the current one falling back to the next
+  // ("combined", default), only the next, or only the current.
+  mode?: SelectionMode;
+
   // Signed-in accounts the key pulls from. Set by the plugin after OAuth
   // completes; the PI displays the emails but does not edit these directly.
   accounts?: Account[];
@@ -195,6 +203,11 @@ export function retainAccounts(
     accounts: (settings.accounts ?? []).filter((a) => keep(a.sub)),
     calendarSelections: nextSels,
   };
+}
+
+export function resolveMode(settings: CountdownSettings): SelectionMode {
+  const m = settings.mode;
+  return m === "upcoming" || m === "ongoing" ? m : "combined";
 }
 
 export function resolveProvider(
