@@ -266,14 +266,16 @@ com.ewels.deckcal.sdPlugin/
   ui/countdown.html     property inspector (sdpi-components v4 over CDN)
   ui/countdown.js       PI bridge: sign-in, calendar checkbox list, conditional show/hide
   bin/plugin.js         rollup output, gitignored
-  imgs/                 actions/<name>/icon.svg  action-list icon: monochrome
-                        #ffffff on transparent, SVG only, per Elgato's icon
-                        guidelines. No PNG twin: a stale raster would win the
-                        extension-less lookup and put colour back in the list.
-                        actions/<name>/key.*     default key image, colour is
-                        fine here (it is not a list icon), svg + rsvg-rendered
-                        pngs. plugin/ holds the category icon (same mono rule)
-                        and the colour marketplace icon.
+  imgs/                 SVG only, except the marketplace icon. Elgato sizes the
+                        art by role, so the rasters were dropped rather than
+                        maintained at two sizes each (see "Elgato guidelines"):
+                          actions/<name>/icon.svg  action list, 20x20,
+                            monochrome #ffffff on transparent
+                          actions/<name>/key.svg   default key image, 72x72
+                            nominal, colour allowed (not a list icon)
+                          plugin/category-icon.svg 28x28, same mono rule
+                          plugin/marketplace.png   256x256 + @2x, colour, PNG
+                            is mandatory for this one
 docs/                   GitHub Pages site (see "Website" below) + README assets
   index.html            homepage
   privacy/index.html    privacy policy (the URL Google's OAuth config points at)
@@ -365,6 +367,32 @@ Text color:
 5. Plugin decodes `id_token` to get `sub` + `email`, persists `{ sub, email, tokens }` to global settings, writes `account = { sub, email }` to per-key settings, sends `authResult` to PI.
 
 Refresh is handled transparently by `OAuth2Client`. The `tokens` event handler persists refreshed `access_token`s back to global settings.
+
+## Elgato guidelines
+
+The plugin is built to <https://docs.elgato.com/guidelines/stream-deck/plugins/>
+and the Marketplace product rules at
+<https://docs.elgato.com/guidelines/products/>. The ones that constrain code or
+assets, and are easy to break by accident:
+
+- **Action list icons** are monochrome `#ffffff` on a transparent background,
+  20x20 (category icon 28x28). Colour is allowed on the key image and nowhere
+  else in the list. Ship SVG and no PNG twin: the manifest resolves icons
+  without an extension, so a stale raster silently wins the lookup.
+- **`showAlert()` is required when an operation fails.** Every launch path
+  returns a boolean for exactly this reason; see `openUrl` / `openInApp` in
+  `util/launch.ts` and the three helpers in `actions/countdown.ts`.
+- **Key images update at most 10 times a second.** The ticker runs at 1Hz and
+  skips `setImage` when the data URL is unchanged, so there is headroom, but
+  anything faster than 10Hz is a violation.
+- **Property inspector**: settings save on change (no Save button), booleans
+  are checkboxes, single-select is a dropdown, and long prose is discouraged
+  since the panel is for configuration. No donation links, no copyright notice.
+- **2 to 30 actions.** DeckCal has 2; removing either one would put it under.
+- Marketplace listing assets live outside this repo (Maker Console), but the
+  masters are in `docs/`: app icon 288x288 PNG, thumbnail and gallery images
+  1920x960 PNG, gallery video MP4 1920x1080 under 250 MB, description between
+  250 and 1500 characters.
 
 ## Conventions
 

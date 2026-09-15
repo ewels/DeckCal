@@ -18,29 +18,35 @@ function isSafeUrl(url: string): boolean {
   }
 }
 
-export function openUrl(url: string): void {
+// Returns false when the launch could not be dispatched, so the caller can
+// flag it on the key with showAlert(). A launch that fails *after* dispatch
+// (the app is missing, the browser refuses the URL) is only visible on the
+// spawned process's error event, so that path logs rather than returns.
+export function openUrl(url: string): boolean {
   if (!isSafeUrl(url)) {
     log.warn("openUrl blocked: unsupported URL scheme");
-    return;
+    return false;
   }
   try {
     streamDeck.system.openUrl(url);
+    return true;
   } catch (err) {
     log.error(`openUrl failed: ${err}`);
+    return false;
   }
 }
 
-export function openInApp(app: string, url?: string): void {
+export function openInApp(app: string, url?: string): boolean {
   if (url && !isSafeUrl(url)) {
     log.warn("openInApp blocked: unsupported URL scheme");
-    return;
+    return false;
   }
   try {
     if (IS_MAC) {
       const args = ["-a", app];
       if (url) args.push(url);
-      spawn("open", args, { detached: true, stdio: "ignore" }).unref();
-      return;
+      spawnDetached("open", args);
+      return true;
     }
     if (IS_WIN) {
       // cmd.exe re-parses its command line and honors `&`, `|`, `^`, `<`, `>`
@@ -50,15 +56,29 @@ export function openInApp(app: string, url?: string): void {
       const quote = (s: string) => `"${s.replace(/"/g, '""')}"`;
       const parts = ["/c", "start", '""', quote(app)];
       if (url) parts.push(quote(url));
-      spawn("cmd.exe", parts, {
-        detached: true,
-        stdio: "ignore",
-        windowsVerbatimArguments: true,
-      }).unref();
-      return;
+      spawnDetached("cmd.exe", parts, true);
+      return true;
     }
     log.warn("openInApp is only implemented for macOS and Windows.");
+    return false;
   } catch (err) {
     log.error(`openInApp failed: ${err}`);
+    return false;
   }
+}
+
+function spawnDetached(
+  command: string,
+  args: string[],
+  windowsVerbatimArguments = false,
+): void {
+  const child = spawn(command, args, {
+    detached: true,
+    stdio: "ignore",
+    windowsVerbatimArguments,
+  });
+  // Without a listener, a spawn failure (missing binary) raises an unhandled
+  // 'error' event and takes the plugin process down with it.
+  child.on("error", (err) => log.error(`${command} failed: ${err.message}`));
+  child.unref();
 }

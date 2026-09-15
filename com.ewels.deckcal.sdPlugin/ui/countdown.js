@@ -53,14 +53,11 @@
     const authBySub = {};
 
     const VARIANT_BANNERS = {
-      combined:
-        "Shows your current meeting if you're in one, otherwise the next one. (Sign in once, you can use the same accounts in any other DeckCal action.)",
-      upcoming:
-        "Shows your next upcoming meeting. Ignores any meeting that is already happening.",
-      ongoing:
-        "Shows the meeting you are currently in. Idle when nothing is happening.",
+      combined: "The meeting you are in, otherwise the next one.",
+      upcoming: "The next meeting only. Ignores one already under way.",
+      ongoing: "The meeting you are in. Idle the rest of the time.",
       alert:
-        "No text on this tile, just the bars: yellow as a meeting approaches, green while it runs, and a flash as it starts. Put it beside a countdown key to make those bars wider. Short press dismisses the flash, long press joins the meeting.",
+        "Bars only, no text: yellow before a meeting, green during it, flashing as it starts. Long press joins.",
     };
 
     // Which pane layout to show. The alert action has its own; every other key

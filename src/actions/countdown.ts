@@ -285,12 +285,14 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
       return;
     }
     if (state === "idle" || state === "upcoming") {
-      this.runNextMeetingAction(settings);
+      if (!this.runNextMeetingAction(settings)) await ev.action.showAlert();
       return;
     }
     if (state === "flashing") return; // ack already fired on keyDown
     if (selection?.mode === "ongoing") {
-      this.joinMeeting(selection.event, settings);
+      if (!this.joinMeeting(selection.event, settings)) {
+        await ev.action.showAlert();
+      }
     }
   }
 
@@ -304,45 +306,40 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     if (!selection || selection.mode === "idle") return;
 
     if (state === "flashing") {
-      this.joinMeeting(selection.event, settings);
+      if (!this.joinMeeting(selection.event, settings)) {
+        await ev.action.showAlert();
+      }
       return;
     }
-    this.openNotes(selection.event);
+    if (!this.openNotes(selection.event)) await ev.action.showAlert();
   }
 
+  // The three launch helpers return false when there was nothing to open or
+  // the launch could not be dispatched. Callers turn that into showAlert(),
+  // which the Stream Deck guidelines require when an action fails.
   protected joinMeeting(
     event: CalendarEvent,
     settings: CountdownSettings,
-  ): void {
+  ): boolean {
     const conf = detectConference(event);
     if (!conf) {
-      if (event.htmlLink) openUrl(event.htmlLink);
-      return;
+      return event.htmlLink ? openUrl(event.htmlLink) : false;
     }
     const handler = resolveProvider(settings, conf.provider);
-    if (handler.type === "app") {
-      openInApp(handler.app, conf.url);
-    } else {
-      openUrl(conf.url);
-    }
+    return handler.type === "app"
+      ? openInApp(handler.app, conf.url)
+      : openUrl(conf.url);
   }
 
-  private openNotes(event: CalendarEvent): void {
+  private openNotes(event: CalendarEvent): boolean {
     const attachment = pickAttachment(event);
-    if (attachment) {
-      openUrl(attachment);
-      return;
-    }
-    if (event.htmlLink) openUrl(event.htmlLink);
+    if (attachment) return openUrl(attachment);
+    return event.htmlLink ? openUrl(event.htmlLink) : false;
   }
 
-  private runNextMeetingAction(settings: CountdownSettings): void {
+  private runNextMeetingAction(settings: CountdownSettings): boolean {
     const a = resolveNextMeeting(settings);
-    if (a.type === "app") {
-      openInApp(a.app, a.arg);
-    } else {
-      openUrl(a.url);
-    }
+    return a.type === "app" ? openInApp(a.app, a.arg) : openUrl(a.url);
   }
 
   protected async runAuthFlow(
@@ -382,6 +379,7 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
         byAccount,
       } as unknown as JsonValue);
     } catch (err) {
+      await action.showAlert();
       // googleapis/gaxios errors hide useful detail in response.data — log it.
       const detail = (err as { response?: { data?: unknown } })?.response?.data;
       log.error(
@@ -428,6 +426,8 @@ export class AlertAction extends BaseCountdownAction {
   ): Promise<void> {
     const { state, selection } = await getPressContextForKey(ev.action.id);
     if (state !== "flashing" || selection?.mode !== "ongoing") return;
-    this.joinMeeting(selection.event, ev.payload.settings);
+    if (!this.joinMeeting(selection.event, ev.payload.settings)) {
+      await ev.action.showAlert();
+    }
   }
 }
