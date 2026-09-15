@@ -3,7 +3,9 @@
   <head>
     <title>DeckCal Settings</title>
     <meta charset="utf-8" />
-    <script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+    <!-- Vendored, not CDN-loaded: the panel has to render with no internet,
+         and a third party going down should not break the settings UI. -->
+    <script src="sdpi-components.js"></script>
     <style>
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,

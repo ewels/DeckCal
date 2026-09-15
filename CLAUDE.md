@@ -263,7 +263,12 @@ src/
   **/*.test.ts          vitest suites, colocated with the module they cover
 com.ewels.deckcal.sdPlugin/
   manifest.json         plugin manifest (Elgato schema)
-  ui/countdown.html     property inspector (sdpi-components v4 over CDN)
+  ui/countdown.html     property inspector
+  ui/sdpi-components.js sdpi-components v4.0.1, vendored rather than loaded
+                        from sdpi-components.dev so the panel works offline.
+                        Third-party minified bundle: excluded in biome.json,
+                        and already covered by .prettierignore's *.js rule.
+                        Re-vendor by curl-ing the same release URL.
   ui/countdown.js       PI bridge: sign-in, calendar checkbox list, conditional show/hide
   bin/plugin.js         rollup output, gitignored
   imgs/                 SVG only, except the marketplace icon. Elgato sizes the
@@ -390,9 +395,9 @@ assets, and are easy to break by accident:
   since the panel is for configuration. No donation links, no copyright notice.
 - **2 to 30 actions.** DeckCal has 2; removing either one would put it under.
 - Marketplace listing assets live outside this repo (Maker Console), but the
-  masters are in `docs/`: app icon 288x288 PNG, thumbnail and gallery images
-  1920x960 PNG, gallery video MP4 1920x1080 under 250 MB, description between
-  250 and 1500 characters.
+  masters and the listing copy are in `docs/marketplace-listing.md`, which
+  carries the spec for each slot. Keep that file in step with any change to
+  how the plugin describes itself.
 
 ## Conventions
 

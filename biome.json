@@ -12,7 +12,8 @@
       "!com.ewels.deckcal.sdPlugin/bin",
       "!com.ewels.deckcal.sdPlugin/logs",
       "!package-lock.json",
-      "!**/*.css"
+      "!**/*.css",
+      "!com.ewels.deckcal.sdPlugin/ui/sdpi-components.js"
     ]
   },
   "formatter": {

@@ -12,6 +12,9 @@
   plugin description, the README opening, and the top of the website, rather
   than in a subsection halfway down. The green in-meeting band is part of that
   description now too, alongside the yellow run-up band.
+- The settings panel no longer pulls its UI components from a CDN. They ship
+  with the plugin, so the panel opens with no internet connection and does not
+  depend on a third party staying up.
 - A failed key press now flashes the Stream Deck alert icon, as Elgato's
   guidelines require, instead of failing silently: a meeting with no link to
   open, a URL DeckCal will not launch, or a sign in that did not complete.
