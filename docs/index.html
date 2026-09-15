@@ -6,7 +6,7 @@
     <title>DeckCal</title>
     <meta
       name="description"
-      content="DeckCal is a Stream Deck plugin that turns a key into a live countdown to your next Google Calendar meeting, with a press to join it."
+      content="DeckCal is a Stream Deck plugin that turns one key, or a whole block of them, into a live countdown to your next Google Calendar meeting, with a press to join it."
     />
     <link rel="icon" href="app-icon.svg" type="image/svg+xml" />
     <link rel="canonical" href="https://deckcal.ewels.co.uk/" />
@@ -14,7 +14,7 @@
     <meta property="og:title" content="DeckCal" />
     <meta
       property="og:description"
-      content="A Stream Deck plugin that turns a key into a live countdown to your next Google Calendar meeting."
+      content="A Stream Deck plugin that turns one key, or a whole block of them, into a live countdown to your next Google Calendar meeting."
     />
     <meta property="og:url" content="https://deckcal.ewels.co.uk/" />
     <meta
@@ -38,8 +38,9 @@
           />
         </picture>
         <p class="hero__tagline">
-          A Stream Deck plugin that turns a key into a live countdown to your
-          next Google Calendar meeting, with a press to join it.
+          A Stream Deck plugin that turns one key, or a whole block of them,
+          into a live countdown to your next Google Calendar meeting, with a
+          press to join it.
         </p>
         <div class="buttons">
           <a
@@ -68,9 +69,42 @@
         <p>
           A key shows a countdown to your next meeting, or the time remaining in
           the one you are already in. A blue bar closes the gap to the next
-          meeting, a yellow fill sweeps across the key over the last few
+          meeting, a yellow fill creeps across the key over the last few
           minutes, and a green fill tracks time elapsed once the meeting is
           under way. Press the key to join.
+        </p>
+        <p>
+          Give it more than one key and those fills stop being a key each. They
+          sweep across the whole group as a single band, turning a row or a
+          block of keys into one countdown bar you cannot miss from the other
+          side of the room.
+        </p>
+
+        <h2>Multi-key sweep</h2>
+        <p>
+          Put several DeckCal keys next to each other and they stop behaving
+          like separate keys. Both fills (the yellow one in the run-up to a
+          meeting and the green one tracking the meeting you are in) are drawn
+          as a single band across the whole group, each key painting its own
+          slice of it. Five keys in a row give you a countdown bar the width of
+          the deck; stack them as well and the bar gets taller.
+        </p>
+        <video
+          src="examples/sweep.mp4"
+          autoplay
+          loop
+          muted
+          playsinline
+          controls
+        >
+          Your browser does not support the video tag.
+        </video>
+        <p>
+          Mix <strong>Meeting countdown</strong> and
+          <strong>Meeting alert</strong> keys to choose which of them carry the
+          text and which are pure bar. There is nothing to configure: keys join
+          a band when they touch and are counting down to the same meeting, so
+          it forms and dissolves on its own.
         </p>
 
         <h2>At a glance</h2>
@@ -156,26 +190,6 @@
           </li>
         </ul>
 
-        <h2>Multi-key sweep</h2>
-        <p>
-          Place several DeckCal keys next to each other and the yellow imminent
-          fill sweeps across them as a single band in the last few minutes
-          before a meeting. Far more visible than a single key can manage on its
-          own. Mix <strong>Meeting countdown</strong> and
-          <strong>Meeting alert</strong> keys to choose which of them carries
-          the text and which is just bar.
-        </p>
-        <video
-          src="examples/sweep.mp4"
-          autoplay
-          loop
-          muted
-          playsinline
-          controls
-        >
-          Your browser does not support the video tag.
-        </video>
-
         <h2>Two actions</h2>
         <ul class="actions">
           <li class="action">
@@ -212,10 +226,11 @@
             </p>
           </li>
           <li class="feature">
-            <h3>Imminent fill</h3>
+            <h3>Multi-key sweep</h3>
             <p>
-              A yellow block gradually fills the key over the last few minutes,
-              sweeping across neighbouring keys as one band.
+              The yellow run-up fill and the green in-meeting fill sweep across
+              every touching DeckCal key as a single band, so a countdown can be
+              as big as you want it.
             </p>
           </li>
           <li class="feature">

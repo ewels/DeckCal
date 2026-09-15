@@ -72,7 +72,7 @@
   "Category": "DeckCal",
   "CategoryIcon": "imgs/plugin/category-icon",
   "CodePath": "bin/plugin.js",
-  "Description": "Live countdown to your next Google Calendar meeting.",
+  "Description": "Live countdown to your next Google Calendar meeting, sweeping across as many keys as you give it.",
   "Icon": "imgs/plugin/marketplace",
   "SDKVersion": 3,
   "Software": {

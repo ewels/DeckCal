@@ -8,6 +8,10 @@
   one only, or the current one only. Keys already placed on the retired
   actions keep working and pick up the matching setting, but the two actions
   no longer appear in the Stream Deck actions list.
+- The multi-key sweep is now described where people actually see it: the
+  plugin description, the README opening, and the top of the website, rather
+  than in a subsection halfway down. The green in-meeting band is part of that
+  description now too, alongside the yellow run-up band.
 - Clearer wording for **Meeting alert** everywhere it is described: it also
   carries the yellow run-up fill and the green in-meeting bar, not just the
   flash as a meeting starts.

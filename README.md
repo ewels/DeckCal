@@ -9,13 +9,37 @@
   <a href="https://deckcal.ewels.co.uk/">deckcal.ewels.co.uk</a>
 </p>
 
-A [Stream Deck](https://www.elgato.com/stream-deck) plugin that turns a key
-into a live indicator for your Google Calendar. The key shows a countdown to
-the next meeting (or remaining time in the current one), with a progress bar
-across the top, a yellow fill in the last few minutes before it starts, and a
-footer band for out-of-office or focus-time overlaps. Press the key to join
-the current meeting, open the meeting URL in a chosen app, or open the next
-meeting's notes doc.
+A [Stream Deck](https://www.elgato.com/stream-deck) plugin that turns one key,
+or a whole row of them, into a live indicator for your Google Calendar. The key
+shows a countdown to the next meeting (or remaining time in the current one),
+with a progress bar across the top, a yellow fill in the last few minutes
+before it starts, and a footer band for out-of-office or focus-time overlaps.
+Press the key to join the current meeting, open the meeting URL in a chosen
+app, or open the next meeting's notes doc.
+
+Give it more than one key and those fills stop being a key each: they sweep
+across the whole row as a single band, so a meeting about to start is
+impossible to miss from anywhere in the room.
+
+## Multi-key sweep
+
+https://github.com/user-attachments/assets/42d28e97-5eb9-4187-94fb-ffbc773e179a
+
+Put two or more DeckCal keys next to each other and they stop behaving like
+separate keys. Both fills (the yellow one in the run-up to a meeting and the
+green one tracking the meeting you are in) are drawn as a single band across
+the whole group, each key painting its own slice of it. Five keys in a row
+give you a countdown bar the width of the deck. Stack them as well and the bar
+gets taller: any block of touching keys joins in, not just a single row.
+
+Mix **Meeting countdown** and **Meeting alert** keys to choose which of them
+carry the text and which are pure bar.
+
+There is nothing to configure. Keys join a band when they touch, sit on the
+same deck, and are counting down to the same meeting, so it forms and
+dissolves on its own. The one thing to keep in step is **Imminent fill (min)**:
+keys that disagree about when the yellow starts are counting different things,
+so they stay separate.
 
 ## Features
 
@@ -29,16 +53,6 @@ meeting's notes doc.
 | <img src="docs/examples/tomorrow_dimmed.png" alt="" width="120">  | **Beyond today.**<br>Distant events are dimmed, events tomorrow get time of day instead of countdown |
 |    <img src="docs/examples/focus_time.png" alt="" width="120">    | **Focus time.**<br>Purple footer band, so you can still see the next regular meeting.                |
 |  <img src="docs/examples/out_of_office.png" alt="" width="120">   | **Out of office.**<br>Grey footer band so you can see the next meeting.                              |
-
-### Multi-key sweep
-
-https://github.com/user-attachments/assets/42d28e97-5eb9-4187-94fb-ffbc773e179a
-
-Place two or more DeckCal keys next to each other and the yellow imminent-fill
-bar sweeps across them as a single band in the last 5 minutes before a
-meeting. A much more visible cue than a single key can give on its own. Mix
-**Meeting countdown** and **Meeting alert** keys to choose which of them
-carries the text and which is just bar.
 
 Short press clears the flashing `NOW` and another joins the current meeting (Google Meet, Zoom, or Teams).
 Long press opens the meeting's first attached doc, falling back to the
