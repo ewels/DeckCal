@@ -18,7 +18,11 @@ import {
   saveAccount,
 } from "../calendar/auth";
 import type { CalendarEvent, CalendarSummary } from "../calendar/client";
-import { detectConference, pickAttachment } from "../calendar/conferencing";
+import {
+  detectConference,
+  pickAttachment,
+  withAuthUser,
+} from "../calendar/conferencing";
 import type { RenderVariant } from "../render/icon";
 import {
   accountNeedsAuth,
@@ -51,6 +55,13 @@ type CalendarsByAccount = Record<
   string,
   { email: string; items: CalendarSummary[]; authRequired: boolean }
 >;
+
+function accountEmail(
+  event: CalendarEvent,
+  settings: CountdownSettings,
+): string | undefined {
+  return settings.accounts?.find((a) => a.sub === event.accountSub)?.email;
+}
 
 type IncomingMessage =
   | { kind: "startAuth" }
@@ -311,7 +322,9 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
       }
       return;
     }
-    if (!this.openNotes(selection.event)) await ev.action.showAlert();
+    if (!this.openNotes(selection.event, settings)) {
+      await ev.action.showAlert();
+    }
   }
 
   // The three launch helpers return false when there was nothing to open or
@@ -322,19 +335,28 @@ abstract class BaseCountdownAction extends SingletonAction<CountdownSettings> {
     settings: CountdownSettings,
   ): boolean {
     const conf = detectConference(event);
-    if (!conf) {
-      return event.htmlLink ? openUrl(event.htmlLink) : false;
-    }
+    if (!conf) return this.openAsAccount(event.htmlLink, event, settings);
+    const url = withAuthUser(conf.url, accountEmail(event, settings));
     const handler = resolveProvider(settings, conf.provider);
-    return handler.type === "app"
-      ? openInApp(handler.app, conf.url)
-      : openUrl(conf.url);
+    return handler.type === "app" ? openInApp(handler.app, url) : openUrl(url);
   }
 
-  private openNotes(event: CalendarEvent): boolean {
-    const attachment = pickAttachment(event);
-    if (attachment) return openUrl(attachment);
-    return event.htmlLink ? openUrl(event.htmlLink) : false;
+  private openNotes(
+    event: CalendarEvent,
+    settings: CountdownSettings,
+  ): boolean {
+    const url = pickAttachment(event) ?? event.htmlLink;
+    return this.openAsAccount(url, event, settings);
+  }
+
+  private openAsAccount(
+    url: string | undefined,
+    event: CalendarEvent,
+    settings: CountdownSettings,
+  ): boolean {
+    return url
+      ? openUrl(withAuthUser(url, accountEmail(event, settings)))
+      : false;
   }
 
   private runNextMeetingAction(settings: CountdownSettings): boolean {
