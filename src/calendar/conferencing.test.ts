@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ev } from "../test-utils";
-import { detectConference, pickAttachment } from "./conferencing";
+import { detectConference, pickAttachment, withAuthUser } from "./conferencing";
 
 describe("detectConference — Google Meet", () => {
   it("prefers hangoutLink above everything else", () => {
@@ -148,5 +148,34 @@ describe("pickAttachment", () => {
 
   it("returns null when there are no attachments", () => {
     expect(pickAttachment(ev())).toBeNull();
+  });
+});
+
+describe("withAuthUser", () => {
+  it("adds the account email to Google URLs", () => {
+    expect(
+      withAuthUser("https://meet.google.com/abc-defg-hij", "me@example.com"),
+    ).toBe("https://meet.google.com/abc-defg-hij?authuser=me%40example.com");
+    expect(
+      withAuthUser(
+        "https://www.google.com/calendar/event?eid=xyz&authuser=0",
+        "me@example.com",
+      ),
+    ).toBe(
+      "https://www.google.com/calendar/event?eid=xyz&authuser=me%40example.com",
+    );
+  });
+
+  it("leaves non-Google URLs, bad URLs and unknown accounts alone", () => {
+    for (const url of [
+      "https://acme.zoom.us/j/999",
+      "https://evilgoogle.com/x",
+      "not a url",
+    ]) {
+      expect(withAuthUser(url, "me@example.com")).toBe(url);
+    }
+    expect(withAuthUser("https://meet.google.com/x", undefined)).toBe(
+      "https://meet.google.com/x",
+    );
   });
 });

@@ -38,3 +38,20 @@ export function pickAttachment(event: CalendarEvent): string | null {
   const a = event.attachments.find((x) => x.fileUrl);
   return a ? a.fileUrl : null;
 }
+
+// Browsers signed in to several Google accounts open Google links as the
+// default account. `authuser` takes an email, which unlike the numeric index
+// doesn't depend on the order accounts were signed in.
+export function withAuthUser(url: string, email: string | undefined): string {
+  if (!email) return url;
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  const host = parsed.hostname;
+  if (host !== "google.com" && !host.endsWith(".google.com")) return url;
+  parsed.searchParams.set("authuser", email);
+  return parsed.toString();
+}
