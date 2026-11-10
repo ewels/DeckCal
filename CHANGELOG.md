@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.1.1 (unreleased)
+## v1.1.1 (2026-11-10)
 
 - Google Meet, Calendar and Drive links open as the Google account the
   meeting came from, instead of the browser's default account.
